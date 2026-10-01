@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "skills": [
+    {
+      "source": "investigate",
+      "command": "sdd-investigate",
+      "manual_only": false,
+      "argument_hint": "<symptom, failing check, or bounded question>"
+    },
+    {
+      "source": "spec",
+      "command": "sdd-spec",
+      "manual_only": false,
+      "argument_hint": "<change-id or feature intent>"
+    },
+    {
+      "source": "plan",
+      "command": "sdd-plan",
+      "manual_only": false,
+      "argument_hint": "<change-id or path to spec.md>"
+    },
+    {
+      "source": "implement",
+      "command": "sdd-implement",
+      "manual_only": true,
+      "argument_hint": "<change-id or authorized bounded change>"
+    },
+    {
+      "source": "verify",
+      "command": "sdd-verify",
+      "manual_only": false,
+      "argument_hint": "[focused|standard|broad] <change-id or change boundary>"
+    }
+  ],
+  "reviewer": {
+    "name": "sdd-independent-review",
+    "source": ".agents/review/independent-review.md",
+    "description": "Review an L3 change, or an explicitly requested change, in a fresh read-only context after initial verification. Inspect supplied diff, spec, plan, code, and evidence; return findings without editing or running code.",
+    "tools": [
+      "Read",
+      "Grep",
+      "Glob"
+    ]
+  },
+  "clients": [
+    "claude",
+    "codex",
+    "cursor",
+    "copilot-vscode"
+  ]
+}

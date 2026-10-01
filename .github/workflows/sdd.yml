@@ -1,0 +1,142 @@
+name: Lightweight SDD
+
+# No path filters: the required gate must be produced for every pull request.
+# The only condition skips the upstream template repository, which has no real
+# code owners; in every repository created from the template it is always true.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdd-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  policy:
+    name: sdd-policy
+    if: ${{ github.repository != 'idaik-stuff/lightweight-sdd' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      level: ${{ steps.assess.outputs.level }}
+      change: ${{ steps.assess.outputs.change }}
+      scope: ${{ steps.assess.outputs.scope }}
+      target: ${{ steps.assess.outputs.target }}
+      base: ${{ steps.assess.outputs.base }}
+      merge: ${{ steps.assess.outputs.merge }}
+      design_only: ${{ steps.assess.outputs.design_only }}
+    steps:
+      - name: Read the trusted PR base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: sdd-trusted
+          persist-credentials: false
+      - name: Read the exact candidate test merge
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: sdd-candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up the framework interpreter
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Assess with base policy only
+        id: assess
+        run: |
+          python -I sdd-trusted/scripts/check-ci \
+            --candidate-root sdd-candidate \
+            --event "$GITHUB_EVENT_PATH" \
+            --expected-sha "$GITHUB_SHA" \
+            --report "$RUNNER_TEMP/sdd-policy.json" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Require configured ownership in both revisions
+        run: |
+          python -I sdd-trusted/scripts/check-ci-setup --root sdd-trusted
+          python -I sdd-trusted/scripts/check-ci-setup --root sdd-candidate
+      - name: Retain policy evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdd-policy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/sdd-policy.json
+          if-no-files-found: error
+          retention-days: 14
+
+  verify:
+    name: sdd-verify
+    needs: policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Read the same trusted policy version
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.policy.outputs.base }}
+          path: sdd-trusted
+          persist-credentials: false
+      - name: Check out the assessed candidate merge
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.policy.outputs.merge }}
+          path: sdd-candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up the framework interpreter
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      # Register product dependency setup as reviewed commands in the check registry.
+      # Do not add secrets, persistent runners, caches, or deployment to this job.
+      - name: Execute checks selected by the base registry
+        env:
+          MODE: ${{ needs.policy.outputs.scope }}
+          TARGET: ${{ needs.policy.outputs.target }}
+          BASE: ${{ needs.policy.outputs.base }}
+          LEVEL: ${{ needs.policy.outputs.level }}
+          CHANGE: ${{ needs.policy.outputs.change }}
+          DESIGN_ONLY: ${{ needs.policy.outputs.design_only }}
+        run: |
+          args=("$MODE" --root sdd-candidate --policy-root sdd-trusted --target "$TARGET")
+          if [[ "$DESIGN_ONLY" != true ]]; then
+            args+=(--base "$BASE" --level "$LEVEL")
+            if [[ "$CHANGE" != none ]]; then
+              args+=(--change "$CHANGE")
+            fi
+          fi
+          python -I sdd-trusted/scripts/verify "${args[@]}"
+      - name: Retain verification evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdd-verify-${{ github.run_id }}-${{ github.run_attempt }}
+          path: sdd-candidate/.sdd/results/verify-*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  gate:
+    name: sdd-gate
+    needs: [policy, verify]
+    if: ${{ always() && github.repository != 'idaik-stuff/lightweight-sdd' }}
+    permissions: {}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require explicit success from both jobs
+        env:
+          POLICY_RESULT: ${{ needs.policy.result }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+        run: |
+          test "$POLICY_RESULT" = success
+          test "$VERIFY_RESULT" = success
+          echo 'Automated gates passed. Human reviews and repository rules still apply.'

@@ -1,0 +1,3 @@
+interface:
+  display_name: "SDD Spec"
+  short_description: "Define a bounded change with testable acceptance criteria."

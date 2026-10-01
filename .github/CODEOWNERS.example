@@ -1,0 +1,15 @@
+# Not active. Copy to CODEOWNERS and replace every @REPLACE-WITH-OWNER.
+# Real owners must have write access; teams must be visible.
+# Add optional product ownership above the protected block. Keep this block last.
+/.github/ @REPLACE-WITH-OWNER
+/.sdd/ @REPLACE-WITH-OWNER
+/.agents/ @REPLACE-WITH-OWNER
+/.claude/ @REPLACE-WITH-OWNER
+/.cursor/ @REPLACE-WITH-OWNER
+/.codex/ @REPLACE-WITH-OWNER
+/scripts/ @REPLACE-WITH-OWNER
+/AGENTS.md @REPLACE-WITH-OWNER
+/CLAUDE.md @REPLACE-WITH-OWNER
+/README.md @REPLACE-WITH-OWNER
+/docs/development/ @REPLACE-WITH-OWNER
+/docs/templates/ @REPLACE-WITH-OWNER

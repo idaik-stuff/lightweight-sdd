@@ -1,0 +1,7 @@
+# Local SDD evidence and Python cache files.
+.sdd/results/
+__pycache__/
+*.py[cod]
+
+# Local secrets.
+.env

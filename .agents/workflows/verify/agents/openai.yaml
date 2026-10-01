@@ -1,0 +1,3 @@
+interface:
+  display_name: "SDD Verify"
+  short_description: "Check behavior and risk with reproducible evidence."

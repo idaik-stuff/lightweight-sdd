@@ -1,0 +1,3 @@
+interface:
+  display_name: "SDD Plan"
+  short_description: "Plan implementation against the actual repository."

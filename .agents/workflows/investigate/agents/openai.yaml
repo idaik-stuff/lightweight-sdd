@@ -1,0 +1,3 @@
+interface:
+  display_name: "SDD Investigate"
+  short_description: "Diagnose behavior with evidence before changing code."

@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+"""Repository entrypoint. Also runnable as: python3 scripts/check-change-level."""
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+from sdd.changes import main
+
+if __name__ == "__main__":
+    raise SystemExit(main(default_root=Path(__file__).resolve().parents[1]))

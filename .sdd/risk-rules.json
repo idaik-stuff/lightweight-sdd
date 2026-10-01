@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "public-contract",
+      "minimum_level": "L3",
+      "paths": [
+        "api/public/**",
+        "contracts/public/**",
+        "**/openapi*.json",
+        "**/openapi*.yaml",
+        "**/openapi*.yml",
+        "**/*.proto"
+      ],
+      "reason": "Potential external contract; inspect consumers and compatibility."
+    },
+    {
+      "id": "security-boundary",
+      "minimum_level": "L3",
+      "paths": [
+        "**/auth/**",
+        "**/authorization/**",
+        "**/permissions/**",
+        "security/**"
+      ],
+      "reason": "Potential access-control or security-boundary change."
+    },
+    {
+      "id": "persistent-data",
+      "minimum_level": "L3",
+      "paths": [
+        "**/migrations/**"
+      ],
+      "reason": "Conservative migration floor; establish data impact and recovery."
+    },
+    {
+      "id": "delivery-policy",
+      "minimum_level": "L3",
+      "paths": [
+        ".github/workflows/**",
+        ".claude/settings*.json"
+      ],
+      "reason": "Changes delivery or agent permission controls."
+    },
+    {
+      "id": "verification-controls",
+      "minimum_level": "L3",
+      "paths": [
+        ".sdd/verification.json",
+        ".sdd/risk-rules.json",
+        "scripts/verify",
+        "scripts/check-docs",
+        "scripts/check-change-level",
+        "scripts/sdd/**"
+      ],
+      "reason": "Changes the commands or policy used to produce verification evidence."
+    },
+    {
+      "id": "ci-governance",
+      "minimum_level": "L3",
+      "paths": [
+        ".github/**",
+        ".sdd/ci.json",
+        "scripts/check-ci",
+        "scripts/check-ci-setup",
+        "AGENTS.md",
+        "CLAUDE.md",
+        ".agents/adapters/**",
+        ".agents/tools/**"
+      ],
+      "reason": "Changes workflow trust, ownership, or CI enforcement; require independent review."
+    },
+    {
+      "id": "agent-integration-controls",
+      "minimum_level": "L3",
+      "paths": [
+        ".agents/workflows/**",
+        ".agents/skills/**",
+        ".agents/review/**",
+        ".claude/skills/**",
+        ".claude/agents/**",
+        ".cursor/**",
+        ".codex/**"
+      ],
+      "reason": "Changes discoverable procedures, invocation gates, or reviewer capabilities; inspect every supported client."
+    },
+    {
+      "id": "production-delivery",
+      "minimum_level": "L3",
+      "paths": [
+        "deploy/**",
+        "ops/**"
+      ],
+      "reason": "Deployment definitions and operations scripts; affects exposure, secrets, data, and recovery."
+    }
+  ]
+}

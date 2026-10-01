@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "framework_paths": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    ".gitignore",
+    ".agents/**",
+    ".claude/**",
+    ".cursor/**",
+    ".codex/**",
+    ".github/**",
+    ".sdd/verification.json",
+    ".sdd/risk-rules.json",
+    ".sdd/ci.json",
+    "docs/**",
+    "scripts/verify",
+    "scripts/check-docs",
+    "scripts/check-change-level",
+    "scripts/check-ci",
+    "scripts/check-ci-setup",
+    "scripts/sdd/**",
+    "scripts/tests/**"
+  ],
+  "design_paths": [
+    "README.md",
+    "docs/*.md"
+  ],
+  "scopes": {
+    "L0": "focused",
+    "L1": "standard",
+    "L2": "standard",
+    "L3": "broad"
+  }
+}
