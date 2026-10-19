@@ -5,7 +5,7 @@ from pathlib import Path
 from support import Fixture, ROOT
 from sdd.changes import load_rules, matches
 from sdd.ci import ci_configuration
-from sdd.ci_setup import PROTECTED, owners
+from sdd.ci_setup import PROTECTED, owners, protected
 from sdd.docs import check_docs
 
 
@@ -37,7 +37,7 @@ class AgentGovernanceTests(Fixture):
         self.assertIn('/.cursor/', PROTECTED)
         self.assertIn('/.codex/', PROTECTED)
         actual = (ROOT/'.github/CODEOWNERS.example').read_text().replace('@REPLACE-WITH-OWNER','@fixture-owner')
-        self.assertEqual(owners(actual), [])
+        self.assertEqual(owners(actual, protected(ROOT)), [])
 
     def test_old_ownership_shape_does_not_count_as_ready(self):
         text = '\n'.join(p+' @fixture-owner' for p in PROTECTED if p not in ('/.cursor/','/.codex/'))

@@ -3,7 +3,7 @@ name: Lightweight SDD direct push
 # Optional safety net after the fact: it flags commits that reached the default branch
 # without a merged pull request. It never gates a merge and does not replace the pre-push
 # hook or sdd-gate; disable it in the Actions UI if it is not wanted. Like sdd.yml, it is
-# skipped in the upstream template repository.
+# skipped in the upstream framework repository.
 on:
   push:
 

@@ -26,8 +26,8 @@ another repository. They do not search arbitrary parent directories for instruct
 | `scripts/check-docs` | Check local Markdown links/anchors and change-record structure. | Truth, completeness, valid human approval, external URL availability. |
 | `scripts/check-change-level` | Compare explicit Git scope with conservative path rules and declared level; require applicable artifacts. | Semantic risk classification or a trusted enforcement boundary. |
 
-The existing `.agents/tools/sync_adapters.py` remains the adapter generator and drift
-checker. There is no new wrapper, classifier Skill, verification Skill variant, or
+In the framework repository, `.agents/tools/sync_adapters.py` remains the adapter
+generator and drift checker; products do not receive it. There is no new wrapper, classifier Skill, verification Skill variant, or
 mandatory per-change JSON file. The plan remains the evidence summary for L2/L3.
 
 ### Run now
@@ -39,8 +39,8 @@ python3 scripts/verify standard --target framework
 python3 scripts/verify broad --target framework
 ```
 
-Focused framework checks cover documentation and adapter drift. Standard adds both
-maintenance test suites. Broad inherits standard; the starter has no additional broad
+Focused framework checks cover documentation, plus adapter drift in the framework
+repository. Standard adds the automation tests (and, there, the adapter tests). Broad inherits standard; the starter has no additional broad
 framework checks. These modes do not invent integration or product tests.
 
 For one documentation edit, use selected paths and inspect the actual diff:
@@ -72,7 +72,7 @@ framework change. Otherwise that run is a framework health check, not change cle
 ## Verification configuration
 
 [`.sdd/verification.json`](../../.sdd/verification.json) is the machine source of truth.
-The root [README](../../README.md#commands) documents entrypoints, not duplicated
+The [command registry](commands.md) documents entrypoints, not duplicated
 check lists. Review changes to the configuration as executable code.
 
 A check has an ID, `kind` (`framework` or `product`), an `argv` string array, and a

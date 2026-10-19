@@ -9,7 +9,8 @@ description: "Use when checking a completed or in-progress change against accept
 Run within the Lightweight SDD repository; resolve repository paths from its root.
 Read `AGENTS.md`, applicable local instructions, the change boundary, and the active
 spec/plan when required. Accept `focused`, `standard`, or `broad` as a requested scope,
-not permission to under-check risk. Use the README's real command registry.
+not permission to under-check risk. Use the real command registry
+(`docs/development/commands.md` and the README's product commands).
 Do not edit product code, update snapshots to hide failures, or install missing tools.
 Update evidence in the plan when authorized by the current change.
 

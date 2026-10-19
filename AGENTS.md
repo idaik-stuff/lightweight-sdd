@@ -60,7 +60,7 @@ For L3, use a fresh reviewer with `.agents/review/independent-review.md`; verify
 Read [compatibility](docs/development/agent-compatibility.md) or [workflow usage](docs/development/workflows.md) only when needed.
 
 ## Commands
-The canonical source is the "Commands" section of [README.md](README.md).
+Framework commands: [commands](docs/development/commands.md). Product commands: the "Commands" section of [README.md](README.md).
 Use only existing, documented commands; those marked `TBD` are not configured.
 Use `scripts/verify` for configured checks; product verification defaults to blocked until real product checks exist.
 For product changes, supply an explicit Git base and declared level; do not infer low risk from unmatched paths.
@@ -73,3 +73,6 @@ CI activation and trust boundaries: [enforcement](docs/development/ci-enforcemen
 Summarize the change and its level, branch and PR, verification evidence, affected documents, and outstanding items.
 For L2/L3, retain the evidence summary in `plan.md`; for L0/L1, in the PR description (the change record).
 Do not mark blocked work as verified or claim human approval on someone else's behalf.
+
+## Project rules
+Project-specific rules, owned by this repository rather than the framework: [project rules](docs/project-rules.md).

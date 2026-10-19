@@ -144,7 +144,10 @@ same controls. Do not use them to work around the manual implementation gate.
 
 ## Customizing the workflows
 
-All workflows are generated from one canonical source per workflow. To change one:
+All workflows are generated from one canonical source per workflow. In a product,
+where the generator is not installed, put project-specific agent rules in
+`docs/project-rules.md` and propose workflow changes upstream. In the framework
+repository, to change one:
 
 1. Edit `.agents/workflows/<workflow>/SKILL.md` (or `.agents/references/` for shared
    detail, `.agents/adapters/clients.json` for names and metadata).

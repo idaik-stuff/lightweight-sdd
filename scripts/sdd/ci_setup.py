@@ -9,26 +9,42 @@ from .ci import ci_configuration
 
 PROTECTED = ('/.github/', '/.sdd/', '/.agents/', '/.claude/', '/.cursor/', '/.codex/', '/scripts/',
              '/AGENTS.md', '/CLAUDE.md', '/README.md', '/docs/development/', '/docs/templates/')
+# Client rows apply only when that client's files are installed in the repository.
+CLIENT_ROWS = {'/.claude/': '.claude', '/CLAUDE.md': 'CLAUDE.md', '/.cursor/': '.cursor', '/.codex/': '.codex'}
 OWNER = re.compile(r'@[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9][A-Za-z0-9_-]*)?')
 
 
-def owners(text: str) -> list[str]:
+def protected(root: Path) -> tuple[str, ...]:
+    return tuple(p for p in PROTECTED if p not in CLIENT_ROWS or (root / CLIENT_ROWS[p]).exists())
+
+
+def owners(text: str, patterns: tuple[str, ...] = PROTECTED) -> list[str]:
+    """The file must end with a protected block: every required pattern, in example order.
+
+    Rows for clients that are not installed may stay in the block; nothing may follow it.
+    """
     errors = []
     rows = [line.split() for line in text.splitlines() if line.strip() and not line.lstrip().startswith('#')]
-    if len(rows) < len(PROTECTED):
-        errors.append('CODEOWNERS must end with every protected pattern from the example')
     for row in rows:
         if len(row) < 2 or any(not OWNER.fullmatch(value) or re.search('replace|example|tbd', value, re.I) for value in row[1:]):
             errors.append('Every CODEOWNERS row needs real @user or @organization/team owners, not placeholders')
-    if [row[0] for row in rows[-len(PROTECTED):]] != list(PROTECTED):
+    block: list[str] = []
+    for row in reversed(rows):
+        if row[0] not in PROTECTED:
+            break
+        block.insert(0, row[0])
+    if len(set(block)) != len(block) or block != [p for p in PROTECTED if p in block]:
         errors.append('Keep the protected block last and in the example order to prevent later overrides')
-    return errors
+    missing = [p for p in patterns if p not in block]
+    if missing:
+        errors.append('CODEOWNERS must end with every protected pattern from the example; missing ' + ', '.join(missing))
+    return sorted(set(errors))
 
 
 def check_setup(root: Path) -> dict:
     ci_configuration(root)
     path = inside(root, '.github/CODEOWNERS')
-    errors = owners(path.read_text(encoding='utf-8')) if path.is_file() else ['Missing .github/CODEOWNERS; customize the example first']
+    errors = owners(path.read_text(encoding='utf-8'), protected(root)) if path.is_file() else ['Missing .github/CODEOWNERS; customize the example first']
     return {'status': 'blocked' if errors else 'local-files-ready', 'errors': errors,
             'remote_enforcement': 'not-checked',
             'remaining': ['Verify owner existence, team visibility, and write permission in GitHub',

@@ -22,17 +22,18 @@ Verification connects to the deterministic commands described in
 
 ## Install or upgrade
 
-For a new repository, create it from this template, or copy the complete framework,
-including `.agents/`, the generated client folders, `.github/`, `.sdd/`, `scripts/`,
-and `.gitignore`. Do not nest it as another framework inside an existing one. When
-upgrading, compare against the new release and merge deliberately; preserve local edits
-and do not overwrite the repository. See [CI activation](ci-enforcement.md#activation-sequence).
+Install and upgrade only with `scripts/install`, run from a checkout of the framework
+repository on a clean change branch of the product (see the README Quick start). It
+ships the canonical workflows, the review contract, and the entrypoints of the chosen
+clients; on upgrade it replaces only framework-owned files and keeps product files.
+Do not copy the framework by hand or nest it inside another framework. Review the
+install or upgrade pull request as L3. See [CI activation](ci-enforcement.md#activation-sequence).
 
 Keep existing organization instructions and permissions. Review filename collisions,
 especially pre-existing `.claude/skills/sdd-*` or reviewer definitions. Do not overwrite
 an unrelated adapter merely because it has the same name.
 
-Run the root README's adapter check. Start a fresh client session at the repository
+Run the adapter check from the root README's maintenance commands (framework repository only). Start a fresh client session at the repository
 root after installation, inspect its command menu and agent list, and confirm that
 project instructions and the custom reviewer are available. Local policy or client
 version may affect discovery; until this check is done, discovery is unverified.
@@ -151,7 +152,7 @@ read-only controls and isolation must be verified and recorded, not merely assum
 
 Edit `.agents/workflows/` for procedures and `.agents/references/` for shared conditional
 detail. Edit `.agents/adapters/clients.json` only for adapter metadata. Regenerate and
-check using the root README commands; do not edit generated entrypoints manually.
+check using the root README maintenance commands; do not edit generated entrypoints manually.
 
 The dependency-free generator deliberately reads this release's narrow frontmatter:
 unquoted `name` and a single-line JSON-quoted `description`, both valid YAML. It fails

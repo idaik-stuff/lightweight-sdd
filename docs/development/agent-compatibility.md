@@ -149,15 +149,18 @@ material corrections and verify the final snapshot through the existing runner.
 
 ## Installation and maintenance
 
-A repository created from the template already contains the generated adapters.
-Confirm they match their sources before relying on them:
+A product receives the generated entrypoints of its chosen clients from
+`scripts/install` (see the README Quick start); it does not receive the generator.
+Confirm the installed framework before relying on it:
 
 ```bash
-python3 .agents/tools/sync_adapters.py --check
 python3 scripts/verify standard --target framework
 ```
 
-To edit procedures, modify `.agents/workflows/`. To edit supported names/metadata,
+To add or drop a client in a product, run the installer again with `--clients`; files
+of a dropped client are listed as orphans for a reviewed removal.
+
+The rest of this section applies to the framework repository. To edit procedures, modify `.agents/workflows/`. To edit supported names/metadata,
 modify `.agents/adapters/clients.json` and the generator deliberately, with tests.
 Do not manually edit generated files. Run:
 
