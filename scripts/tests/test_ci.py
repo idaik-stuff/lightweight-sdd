@@ -88,9 +88,13 @@ class PolicyTests(Fixture):
         event, merge = self.finish(level,change)
         return assess_ci(self.trusted,self.root,event,merge)
 
-    def test_doc_typo_focused(self):
+    def test_doc_typo_runs_standard_in_ci(self):
+        # Shipped policy: CI never runs below standard for L0-L2, even when local L0 is focused.
         self.start(); self.write('README.md','# Changed\n')
-        r=self.assess('L0'); self.assertEqual((r['status'],r['scope'],r['target'],r['design_only']),('passed','focused','framework',True))
+        r=self.assess('L0'); self.assertEqual((r['status'],r['scope'],r['target'],r['design_only']),('passed','standard','framework',True))
+
+    def test_shipped_ci_scopes(self):
+        self.assertEqual(ci_configuration(ROOT)['scopes'], {'L0':'standard','L1':'standard','L2':'standard','L3':'broad'})
 
     def test_unrecognized_path_needs_product(self):
         self.start(); self.write('src/main.py','pass\n')

@@ -30,7 +30,7 @@
     "docs/*.md"
   ],
   "scopes": {
-    "L0": "focused",
+    "L0": "standard",
     "L1": "standard",
     "L2": "standard",
     "L3": "broad"

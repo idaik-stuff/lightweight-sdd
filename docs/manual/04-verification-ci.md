@@ -27,8 +27,8 @@ standard = focused + standard checks
 broad    = focused + standard + broad checks
 ```
 
-The minimum scope follows the level (L0 focused, L1 focused or standard, L2 standard,
-L3 broad). A higher scope is always allowed; a lower one never.
+The minimum scope follows the level (locally L0 and L1 focused, L2 standard, L3 broad;
+in CI standard for L0 to L2). A higher scope is always allowed; a lower one never.
 
 **Target** decides *what* is checked:
 
@@ -203,7 +203,7 @@ Change-ID: CHG-001-book-reservations
 ```
 
 `Change-ID` is `none` for L0/L1. Editing the block starts a new assessment. In CI,
-L1 always runs `standard` (see [`.sdd/ci.json`](../../.sdd/ci.json)).
+L0 to L2 always run `standard` (see [`.sdd/ci.json`](../../.sdd/ci.json)).
 
 ### How a PR is routed
 

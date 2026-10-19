@@ -33,8 +33,14 @@ Work through the questions in the order `AGENTS.md` uses:
 1. Could it touch a public contract, permissions or security, persistent data,
    something irreversible, an architectural boundary, or critical availability? → **L3**.
 2. Does nothing observable change at all? → **L0**.
-3. Is it a local fix or refactor of existing behavior with no new capability? → **L1**.
-4. Otherwise, it intentionally adds or changes behavior → **L2**.
+3. Does any L2 trigger apply: unclear what to build (T1), a new user-visible flow (T2),
+   coordinated changes across several areas (T3), more than one PR or more than about a day of
+   work (T4), or a durable design decision (T5)? Or did the owner ask for L2? → **L2**.
+4. Otherwise, including a small new capability with one to three clear AC → **L1**.
+
+State the result in one line before you start, for example `L1: no L2 trigger` or
+`L2: T2`. Raise it if you discover a trigger later. Only the owner lowers L2 to L1; an
+L3 is lowered only by evidence that the risk is absent, never by preference.
 
 When you are unsure whether an L3 trigger applies, investigate enough to decide; do
 not guess low. The criteria are in the
@@ -105,8 +111,8 @@ so it stays L1.
 before the fix and passes after it. Do not expand the scope.
 ```
 
-**Verify.** L1 uses focused or standard verification locally. The CI gate always runs
-standard for L1.
+**Verify.** L1 needs at least focused verification locally. The CI gate always runs
+standard for L0 to L2.
 
 ```bash
 python3 scripts/verify standard --base main --level L1
@@ -120,8 +126,8 @@ change, checks, and limitations, including the regression test's before/after re
 ## L2: reserving a book that is on loan
 
 **Request.** Members want to reserve a book that is currently on loan and be first in
-line when it comes back. This is intentionally new behavior with no L3 trigger
-(assuming reservations do not change who may do what), so it is L2.
+line when it comes back. This is a new user-visible flow (T2) with no L3 trigger
+(assuming reservations do not change who may do what), so it is `L2: T2`.
 
 ### Spec
 

@@ -84,6 +84,7 @@ Environment: Windows 11 with Python 3; Linux via WSL Ubuntu for the full suites.
   - F3: the template legends and the `spec`/`plan` workflows say to keep required sections and conditional ones whose condition holds; workflow step 4 in both now depends on the level.
   - F4: the legends say to delete the italic marker lines when filling a record; the lean L2 test runs through `check_docs` with the markers deleted and with them kept.
   - F5: long lines rewrapped in the plan workflow and manual 03.
+- Integration with CHG-003 (merged to `main` as `ac518a8` while this PR was open): `main` was merged into this branch; the only conflict was `CHANGELOG.md`, resolved by keeping both entries. Re-verified on the merged snapshot `0c474e5fd99e0949` (base `main` `ac518a8`): Windows 218 + 57 tests, Linux native ext4 copy 218 (1 skip) + 57, `check-change-level` L3 broad and `verify broad --target framework` passed, report `.sdd/results/verify-20261019T142347672098Z-02fb9787.json`.
 
 ## Completion evidence
 

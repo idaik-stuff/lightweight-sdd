@@ -16,9 +16,11 @@ process feel heavy and teaches people to skip it. Deflating it to go faster remo
 gates exactly where they matter. When unsure whether an L3 trigger applies, a short
 investigation is cheaper than either mistake.
 
-**The L1/L2 boundary is intent.** If the change makes the product do something it was
-not meant to do before, it is L2, however small. If it makes the product do what it
-was always meant to do, it is L1.
+**The L1/L2 boundary is a trigger, not novelty.** A small new capability whose behavior
+fits one to three clear AC is L1. It becomes L2 only when a trigger applies: you are
+not sure what to build, it adds a new user-visible flow, it needs coordinated changes
+across areas, it spans more than one PR or more than about a day, or it records a durable design
+decision. Name the trigger; if you cannot, it is L1.
 
 **Watch for hidden L3.** The usual suspects are: anything that changes who can do
 what; stored data that must be corrected or migrated; a response format another
