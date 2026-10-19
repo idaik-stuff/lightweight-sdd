@@ -76,7 +76,7 @@ Resolve blocking findings and repeat the affected checks; the evidence must corr
 
 For L2/L3, `plan.md` contains a summary for each AC: the check, result, and a reproducible reference to the relevant test, artifact, or record. Include the version/diff and environment if they affect interpretation. Do not copy entire logs or sensitive data into the repository.
 
-For L0/L1, recording the level and rationale, change, checks, and limitations in the commit message or an existing change record is sufficient. If evidence is in a PR, retain the necessary durable summary in Git; do not create `verification.md` just for this. The agent does not commit or publish anything without authorization.
+For L0/L1, recording the level and rationale, change, checks, and limitations in the PR description is sufficient: it is the change record, and squash merging with the "Pull request title and description" message keeps it in Git. Do not create `verification.md` just for this. Every change, at every level, is made on its own branch and integrated through a pull request; the agent never commits to the default branch and never merges. The agent does not commit or publish anything without authorization, and an authorization to "commit and push" means the change branch.
 
 A release is ready when the scope is resolved, applicable AC have been checked, required gates are satisfied, and affected documents reflect the outcome. "Implemented" does not mean "deployed": record production delivery separately in the plan when applicable.
 

@@ -27,6 +27,12 @@ class AgentGovernanceTests(Fixture):
                 self.assertTrue(any(rule['minimum_level']=='L3' and any(matches(path,g) for g in rule['paths'])
                                     for rule in rules))
 
+    def test_hooks_are_l3_framework_paths_in_shipped_policy(self):
+        path = 'scripts/hooks/pre-push'
+        self.assertTrue(any(matches(path, pattern) for pattern in ci_configuration(ROOT)['framework_paths']))
+        self.assertTrue(any(rule['minimum_level'] == 'L3' and any(matches(path, g) for g in rule['paths'])
+                            for rule in load_rules(ROOT)))
+
     def test_current_ownership_includes_new_roots(self):
         self.assertIn('/.cursor/', PROTECTED)
         self.assertIn('/.codex/', PROTECTED)

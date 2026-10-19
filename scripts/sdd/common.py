@@ -60,8 +60,8 @@ def inside(root: Path, value: str) -> Path:
     return candidate
 
 
-def git(root: Path, *args: str) -> bytes:
-    """Read Git without a shell, external diff drivers, or interactive prompting."""
+def run_git(root: Path, *args: str) -> subprocess.CompletedProcess:
+    """Run Git without a shell, external diff drivers, or interactive prompting."""
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_OPTIONAL_LOCKS="0")
     # Do not let an inherited Git directory/index redirect reads to another repository.
     for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR"):
@@ -75,9 +75,31 @@ def git(root: Path, *args: str) -> bytes:
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ConfigError(f"Git unavailable: {exc}") from exc
+    return result
+
+
+def git_failure(result: subprocess.CompletedProcess) -> ConfigError:
+    return ConfigError("Git command failed: " + result.stderr.decode("utf-8", "replace").strip())
+
+
+def git(root: Path, *args: str) -> bytes:
+    """Read Git; any nonzero exit is an error."""
+    result = run_git(root, *args)
     if result.returncode:
-        message = result.stderr.decode("utf-8", "replace").strip()
-        raise ConfigError(f"Git command failed: {message}")
+        raise git_failure(result)
+    return result.stdout
+
+
+def git_optional(root: Path, *args: str) -> bytes | None:
+    """Read Git where exit status 1 means absent (unset config, detached HEAD, missing ref).
+
+    Any other failure still raises, so a broken repository never reads as an absent value.
+    """
+    result = run_git(root, *args)
+    if result.returncode == 1:
+        return None
+    if result.returncode:
+        raise git_failure(result)
     return result.stdout
 
 

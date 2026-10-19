@@ -112,6 +112,38 @@ class VerificationTests(Fixture):
         self.assertEqual(report["status"], "failed")
         self.assertFalse((self.root / "should-not-exist").exists())
 
+    def test_default_branch_fails_before_execution(self):
+        self.config(manifest([command(code="from pathlib import Path; Path('should-not-exist').touch()"),
+                              command("product-test", "product")]))
+        base = self.init_git()
+        self.git("checkout", "-q", self.default_branch)
+        self.write("change.txt", "change")
+        for target in ("framework", "product"):
+            with self.subTest(target=target):
+                report = self.quiet_run(target=target, base=base, level="L1")
+                self.assertEqual(report["status"], "failed")
+                self.assertIn("create a change branch", " ".join(report["reasons"]))
+                self.assertTrue(all(c["status"] == "not_run" for c in report["checks"]))
+                self.assertFalse((self.root / "should-not-exist").exists())
+
+    def test_default_branch_failure_is_saved_by_cli(self):
+        base = self.init_git()
+        self.git("checkout", "-q", self.default_branch)
+        self.write("change.txt", "change")
+        process = subprocess.run([sys.executable, str(ROOT / "scripts/verify"), "focused", "--target", "framework",
+                                  "--root", str(self.root), "--base", base, "--level", "L1"],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        self.assertEqual(process.returncode, 1, process.stdout + process.stderr)
+        report = json.loads(next((self.root / ".sdd/results").glob("verify-*.json")).read_text())
+        self.assertEqual(report["change_gate"]["default_branch"], self.default_branch)
+
+    def test_health_check_without_base_ignores_branch(self):
+        self.init_git()
+        self.git("checkout", "-q", self.default_branch)
+        self.git("config", "--unset", "sdd.defaultBranch")
+        self.write("change.txt", "change")
+        self.assertEqual(self.quiet_run(target="framework")["status"], "passed")
+
     def test_passed_process(self):
         report = self.quiet_run()
         self.assertEqual(report["status"], "passed")

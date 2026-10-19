@@ -1,6 +1,6 @@
 # Plan: CHG-001-branch-and-pr-workflow | Branch and pull request for every change
 
-Status: `approved` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
+Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -28,6 +28,7 @@ Inspected at base `ebf25ad` (1.0.0):
    - Git config `sdd.defaultBranch`, when set (explicit local declaration; no schema change to `.sdd/ci.json`);
    - otherwise `refs/remotes/origin/HEAD` (set by `git clone` or `git remote set-head origin --auto`);
    - otherwise undeterminable → error naming both ways to declare it (AC-06).
+   Refined after review: see Deviations (F3, F4, N1, N2).
 3. Current branch equals the default branch → error: "Changes on default branch '<name>'; create a change branch (for example `chg-NNN-<slug>`) before editing" (AC-01, AC-02). The report records `branch` and `default_branch` fields.
 
 The error goes through the existing `errors` list, so `check-change-level` exits 1 and `verify` fails before running checks and saves the JSON report, as today.
@@ -119,18 +120,47 @@ Technical decisions accepted by the owner (Idaika Iglesias, 2026-10-19, in conve
 
 ## Deviations and decisions during execution
 
-None recorded yet.
+- `scripts/tests/support.py`: `Fixture.init_git()` now declares the initial branch as `sdd.defaultBranch` and switches to `chg-fixture`, so existing tests keep exercising unchanged behavior on a change branch (AC-03); `git_env()` was extracted for the hook tests. Test-only; no scope impact.
+- `docs/manual/02-adoption.md` (not listed above): one paragraph after step 2 says every later change goes through branch + PR and points to the Quick start. Without it the manual's step 1 clean-up reads as work on the default branch. Minor documentation addition within the accepted scope.
+- The README Quick start was renumbered (6 steps): branch work and the hook are step 3, CI activation with the first PR is step 4.
+- AC-09's execution test can run on Linux through WSL Ubuntu on this workstation, so it is evidence rather than blocked.
+- Review-driven refinements (owner accepted the corrections, 2026-10-19, in conversation); same AC, stricter fail-closed behavior:
+  - F3: `sdd.defaultBranch` is read from repository-local config only (`--local`), must name an existing local or `origin` branch, and must agree with `origin/HEAD` when both exist; otherwise the checks and the hook fail. The hook applies the same rules.
+  - F4: `scripts/sdd/common.py` gains `run_git()` and `git_optional()`; only Git exit status 1 means "absent" (detached HEAD, unset config, missing ref). Any other failure propagates instead of skipping the rule.
+  - F5: `sdd-direct-push` counts only PRs merged into the default branch, fails on force pushes, on pushes listing no commits, and at the 2048-commit event limit.
+  - F6: the hook gives URL pushes their own message (no `set-head` advice); tests cover deletion, mixed multi-ref, URL, and declaration errors.
+  - F1: `scripts/hooks/pre-push` is recorded as mode `100755`, with a test.
+  - N1/N2 (second review): the hook refuses on Git exit codes other than 0/1 and compares a declaration only with `origin/HEAD`, as `changes.py` does; a secondary remote with another HEAD no longer blocks change-branch pushes. N3: README and CHANGELOG list the declaration failure cases.
+  - F2/F7/F8: per-file branch/merge obligations in `implement`, `verify`, handoffs; manual pages `01-concepts.md`, `03-working-a-change.md`, `example/README.md` now name the PR description as the L0/L1 record; Quick start step 1 covers existing repositories; CHANGELOG and `ci-enforcement.md` document named-branch CI jobs and the event limit.
 
 ## Completion evidence
 
-Verified version or diff: pending. Relevant environment: pending.
+Verified version or diff: working snapshot on branch `chg-001-branch-and-pr-workflow` after both review rounds (HEAD `7fc53ce` plus uncommitted changes, snapshot `f81ae8709f03a2f3`), base `main` (`ebf25ad`). Earlier runs: `b259b48de359da5f` (after F1-F8), `7e9559021a4b47c1` (before corrections), `8d8f10310b25a317` (with the feedback file). Only this plan's evidence and review lines changed after the final run.
+Relevant environment: Windows 11, Git for Windows, Python 3.14.7; Linux via WSL Ubuntu, Python 3.14.4. This clone declares `git config sdd.defaultBranch main` (no `origin/HEAD`).
 
 | AC / check | Result | Evidence summary / reference |
 | --- | --- | --- |
-| AC-01 to AC-14 | Not run | Pending implementation. |
+| AC-01, AC-03, AC-04, AC-05, AC-06 | Passed | `test_changes.py`: default-branch failure (API and CLI exit 1), change branch unaffected, no-diff not failed, detached checkout unaffected, undeterminable default fails closed, `origin/HEAD` resolution, declaration that disagrees, names no branch, or is only global fails, Git errors other than exit 1 propagate. |
+| AC-02, AC-04 | Passed | `test_verify.py`: failure before any check runs for both targets, report saved by CLI with `default_branch`, health check without `--base` unaffected. |
+| AC-07, AC-08 | Passed | `test_hooks.py`: real pushes to a local bare remote on Windows, WSL on `/mnt/e`, and a native ext4 copy written from the index (hook mode `-rwxr-xr-x`); default branch, deletion, and mixed pushes refused; change branch accepted; `<remote>/HEAD`, URL, and declaration errors covered; secondary remote, unreadable declaration (Git stub, Linux only), index mode `100755` asserted. |
+| AC-09 | Passed (local only) | `test_direct_push_workflow.py`: static contract on Windows and Linux; shell execution with stubbed `gh` on Linux only (bootstrap, merged, direct, API failure, force push, empty, 2048 limit). The jq filter on `.base.ref` is not exercised by the stub, and there is no live GitHub run (skipped in this repository). |
+| AC-10, AC-12, AC-13 | Passed (review) | Text present in `AGENTS.md`, `implement`, `verify`, handoffs, PR template, README, `ci-enforcement.md`, manual; metadata block unchanged and `test_ci.py` passes. Confirmed by the independent review after F2 and F7. |
+| AC-11 | Passed | `python3 .agents/tools/sync_adapters.py --check`: 20 generated files, 0 stale. |
+| AC-14 | Passed | `test_agent_governance.py` and `test_changes.py`: `scripts/hooks/**` is a framework path with L3 floor; L2 declaration fails. |
+| Full suites | Passed | Windows: 199 automation tests (6 platform skips) and 57 adapter tests. Linux native ext4 copy: 199 (1 skip: index-mode test needs a Git checkout) and 57. |
+| Level floor | Passed | `python3 scripts/check-change-level --base main --level L3 --change CHG-001-branch-and-pr-workflow --scope broad`: floor L3, 4 L3 rules matched, 28 changed paths. |
+| Broad gate | Passed | `python3 scripts/verify broad --target framework --base main --level L3 --change CHG-001-branch-and-pr-workflow`: docs, adapters, adapter-tests, automation-tests passed; report `.sdd/results/verify-20261019T102714983037Z-8d87c45b.json` (local, untracked); source unchanged during the run. |
 
-Independent review: pending; required for L3. Record reviewer, isolation, scope, findings, and resolution.
+Independent review: automated reviewer (`sdd-independent-review`, Claude sub-agent), fresh context without the implementation conversation, read-only tools (Read, Grep, Glob); it ran no code or tests, and every count, hash, and mode it cites is requester-supplied. The same reviewer context was resumed for rounds 2 and 3. Not a human review or approval.
 
-Outstanding items / exceptions: `sdd-gate` and `sdd-direct-push` are skipped in this repository by design; AC-09 has no live GitHub evidence, and its execution test is skipped on this Windows workstation, so it needs a Linux run (for example WSL or a Linux machine) or is recorded as blocked.
+| Round | Target | Result | Resolution |
+| --- | --- | --- | --- |
+| 1 | Full patch vs `main`, snapshot `7e9559021a4b47c1` | Blocking: F1 (hook committed without executable bit), F2 (AC-10 obligations missing per file). Non-blocking: F3 (global or invalid declaration fails open), F4 (any Git error read as absent), F5 (workflow accepts PRs into other branches, force and empty pushes), F6 (hook edge-case tests, URL message), F7 (manual drift), F8 (named-branch CI jobs) | All fixed; see Deviations |
+| 2 | Full patch vs `main`, snapshot `b259b48de359da5f` | No blocking findings. Non-blocking: N1 (hook ignores Git exit codes > 1), N2 (hook compares declaration with any remote's HEAD), N3 (docs omit declaration failures), N4 (API may not yet list a just-merged PR; hypothesis) | N1-N3 fixed; N4 kept as a watch item for the first live adopter run |
+| 3 | Hook, hook tests, README, CHANGELOG diff only | No blocking findings, no new findings | None needed |
+
+Review limitations: an isolated session of the same model is not human independence. Not exercised anywhere: a live run of `sdd-direct-push`, its jq `.base.ref` filter, macOS, and a Git exit status above 1 on the hook's `remote_head` path. By design, with a declaration only the declared branch is protected on every remote, so a secondary remote with a different default branch is not protected. Confirm mode `100755` for `scripts/hooks/pre-push` in the final commit.
+
+Outstanding items / exceptions: `sdd-gate` and `sdd-direct-push` are skipped in this repository by design, so the PR has no server-side gate; AC-09 has no live GitHub evidence. The untracked `FEEDBACK-pending-placeholder-false-positive.md` (input for CHG-002) is present in the verified snapshot.
 
 Delivery: not merged; not released.

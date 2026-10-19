@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import re
 
-from .common import ConfigError, commit, git, git_root, inside, load_json, nul_paths, repo_paths, require_keys
+from .common import ConfigError, commit, git, git_optional, git_root, inside, load_json, nul_paths, repo_paths, require_keys
 from .docs import change_id, field, read_markdown, validate_change
 
 LEVELS = {f"L{i}": i for i in range(4)}
@@ -54,6 +54,48 @@ def changed_paths(root: Path, base: str) -> tuple[list[str], str]:
     return paths, resolved
 
 
+def optional_value(root: Path, *args: str) -> str | None:
+    """A Git value whose absence (exit 1) is a normal answer; other failures raise."""
+    output = git_optional(root, *args)
+    if output is None:
+        return None
+    return output.decode("utf-8", "surrogateescape").strip() or None
+
+
+def default_branch(root: Path) -> tuple[str | None, str | None]:
+    """Return (name, error): this repository's sdd.defaultBranch, else origin/HEAD; never a guess."""
+    prefix = "refs/remotes/origin/"
+    remote = optional_value(root, "symbolic-ref", "-q", prefix + "HEAD")
+    remote = remote[len(prefix):] if remote and remote.startswith(prefix) else None
+    # Only repository-local config: a global value could silently name another repository's branch.
+    declared = optional_value(root, "config", "--local", "--get", "sdd.defaultBranch")
+    if declared is None:
+        return remote, None
+    if not any(git_optional(root, "show-ref", "--verify", "-q", ref) is not None
+               for ref in (f"refs/heads/{declared}", f"{prefix}{declared}")):
+        return None, f"sdd.defaultBranch '{declared}' names no local or origin branch; fix the declaration"
+    if remote and remote != declared:
+        return None, f"sdd.defaultBranch '{declared}' disagrees with origin/HEAD '{remote}'; fix one of them"
+    return declared, None
+
+
+def branch_guard(root: Path) -> tuple[str | None, str | None, list[str]]:
+    branch = optional_value(root, "symbolic-ref", "-q", "--short", "HEAD")
+    if branch is None:
+        # A detached checkout, such as the CI test merge, is not a branch anyone commits to.
+        return None, None, []
+    default, error = default_branch(root)
+    if error:
+        return branch, None, [error]
+    if default is None:
+        return branch, None, ["Cannot determine the default branch; run `git remote set-head origin --auto` "
+                              "or `git config sdd.defaultBranch <name>`"]
+    if branch == default:
+        return branch, default, [f"Changes on default branch '{default}'; create a change branch "
+                                 "(for example chg-NNN-<slug>) and integrate through a pull request"]
+    return branch, default, []
+
+
 def assess(root: Path, base: str, declared: str, change: str | None = None, scope: str | None = None, policy_root: Path | None = None) -> dict:
     if declared not in LEVELS:
         raise ConfigError("Declared level must be L0, L1, L2, or L3")
@@ -70,7 +112,8 @@ def assess(root: Path, base: str, declared: str, change: str | None = None, scop
             matches_found.append({"rule": rule["id"], "minimum_level": rule["minimum_level"],
                                   "reason": rule["reason"], "paths": hits})
     required = max(LEVELS[declared], floor)
-    errors: list[str] = []
+    # Without changes there is nothing to place on a branch (template health check, bootstrap).
+    branch, default, errors = branch_guard(root) if paths else (None, None, [])
     if LEVELS[declared] < floor:
         errors.append(f"Declared {declared} is below detected minimum L{floor}; reclassify before continuing")
     required_scope = "broad" if required == 3 else "standard" if required == 2 else "focused"
@@ -88,6 +131,7 @@ def assess(root: Path, base: str, declared: str, change: str | None = None, scop
     return {"status": status, "base_commit": resolved, "declared_level": declared,
             "detected_floor": f"L{floor}", "required_level": f"L{required}",
             "minimum_scope": required_scope, "change": change, "paths": paths,
+            "branch": branch, "default_branch": default,
             "matches": matches_found, "errors": errors,
             "reason": "No changes relative to the explicit base" if not paths else None,
             "readiness": "not-assessed", "policy_source": "external trusted policy" if policy_root else "working-tree .sdd/risk-rules.json",

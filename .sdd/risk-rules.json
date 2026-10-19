@@ -51,7 +51,8 @@
         "scripts/verify",
         "scripts/check-docs",
         "scripts/check-change-level",
-        "scripts/sdd/**"
+        "scripts/sdd/**",
+        "scripts/hooks/**"
       ],
       "reason": "Changes the commands or policy used to produce verification evidence."
     },

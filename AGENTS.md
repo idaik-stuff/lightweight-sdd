@@ -6,6 +6,10 @@
 - Do not invent requirements or approvals. State assumptions; ask about blocking uncertainties.
 - Implement only when authorized to do so. A request to design or investigate does not authorize implementation.
 - Make small changes; do not silently expand scope or alter contracts.
+- Never commit to the default branch. Before the first edit, work on one branch per change named
+  after its change id (for example `chg-012-short-slug`); "commit and push" means that branch.
+  Integrate through a pull request that uses the PR template, at every level. Never merge: the
+  owner merges, only with a green `sdd-gate` or a noted exception.
 - Preserve other people's work. Do not publish secrets or use sensitive data in fixtures or logs.
 - Obtain specific authorization before destructive actions, production access, or deployments.
 - Record durable decisions in Git and update only the affected documentation.
@@ -54,6 +58,6 @@ CI uses base-commit policy and the final `sdd-gate`; a green gate does not repla
 CI activation and trust boundaries: [enforcement](docs/development/ci-enforcement.md), read only when relevant.
 
 ## Completion
-Summarize the change and its level, verification evidence, affected documents, and outstanding items.
-For L2/L3, retain the evidence summary in `plan.md`; for L0/L1, in the change record.
+Summarize the change and its level, branch and PR, verification evidence, affected documents, and outstanding items.
+For L2/L3, retain the evidence summary in `plan.md`; for L0/L1, in the PR description (the change record).
 Do not mark blocked work as verified or claim human approval on someone else's behalf.

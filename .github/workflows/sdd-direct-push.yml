@@ -1,0 +1,62 @@
+name: Lightweight SDD direct push
+
+# Optional safety net after the fact: it flags commits that reached the default branch
+# without a merged pull request. It never gates a merge and does not replace the pre-push
+# hook or sdd-gate; disable it in the Actions UI if it is not wanted. Like sdd.yml, it is
+# skipped in the upstream template repository.
+on:
+  push:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  direct-push:
+    name: sdd-direct-push
+    if: ${{ github.repository != 'idaik-stuff/lightweight-sdd' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require a merged pull request for every pushed commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BEFORE: ${{ github.event.before }}
+          FORCED: ${{ github.event.forced }}
+          COMMITS: ${{ join(github.event.commits.*.id, ' ') }}
+        run: |
+          if [[ "$BEFORE" =~ ^0+$ ]]; then
+            echo 'Branch creation push (bootstrap); no earlier commit to compare.'
+            exit 0
+          fi
+          if [[ "$FORCED" == true ]]; then
+            echo 'Force push to the default branch: its history was rewritten outside a pull request.'
+            exit 1
+          fi
+          read -r -a commits <<< "$COMMITS"
+          # The push event lists at most 2048 commits; a larger push cannot be fully checked.
+          if (( ${#commits[@]} == 0 || ${#commits[@]} >= 2048 )); then
+            echo "Cannot check this push: ${#commits[@]} commits listed in the event; inspect it manually."
+            exit 1
+          fi
+          missing=()
+          for sha in "${commits[@]}"; do
+            # Only a pull request merged into the default branch counts, not one into another branch.
+            merged=$(gh api "repos/$REPO/commits/$sha/pulls" \
+              --jq '[.[] | select(.merged_at != null and .base.ref == env.DEFAULT_BRANCH)] | length')
+            if [[ "$merged" == 0 ]]; then
+              missing+=("$sha")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            printf 'Commit without a merged pull request: %s\n' "${missing[@]}"
+            echo 'Integrate every change through a branch and pull request; see docs/development/ci-enforcement.md.'
+            exit 1
+          fi
+          echo 'Every pushed commit arrived through a merged pull request.'

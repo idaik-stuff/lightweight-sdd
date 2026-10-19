@@ -20,17 +20,30 @@ worked example.
 
 1. Create a repository from this template (**Use this template** on GitHub), or merge
    the framework deliberately into an existing repository. Preserve existing
-   organization instructions, permissions, documents, and configurations.
+   organization instructions, permissions, documents, and configurations. In an existing
+   repository, add the framework on a branch and through a pull request.
 2. Check that the framework is healthy:
    `python3 scripts/verify standard --target framework`.
-3. Complete [the brief](docs/product/brief.md) and [the MVP scope](docs/product/mvp.md)
+3. Work on branches from now on, including the template clean-up. Only the initial
+   commit belongs on the default branch. Once per clone, enable the guard that refuses
+   pushes to it:
+   `git config core.hooksPath scripts/hooks`. The hook and the checks read the default
+   branch from this repository's `git config sdd.defaultBranch <name>`, else from
+   `origin/HEAD` (set it with `git remote set-head origin --auto`). They fail instead of
+   passing when neither exists, or when the declared branch does not exist or disagrees
+   with `origin/HEAD`.
+   Every change, at every level, goes on its own branch and through a pull request;
+   in GitHub, allow squash merging only, with the default message "Pull request title
+   and description", and delete head branches automatically.
+4. Activate the CI gate following the
+   [activation guide](docs/development/ci-enforcement.md#activation-sequence), and open
+   your first change as a pull request to see `sdd-gate` run.
+5. Complete [the brief](docs/product/brief.md) and [the MVP scope](docs/product/mvp.md)
    first. Add only necessary cross-cutting requirements to [the PRD](docs/product/prd.md).
    Describe in [architecture](docs/architecture/overview.md) what actually exists.
    Proposed architecture belongs in the first plan and, when justified, an ADR.
-4. When the stack exists, register its real checks in `.sdd/verification.json`
+6. When the stack exists, register its real checks in `.sdd/verification.json`
    (see [connecting the product](docs/development/automation.md#connecting-the-product)).
-5. Optionally activate the CI gate following the
-   [activation guide](docs/development/ci-enforcement.md#activation-sequence).
 
 [AGENTS.md](AGENTS.md) contains permanent rules. [The methodology](docs/development/methodology.md)
 defines gates; [the documentation index](docs/README.md) identifies each canonical source.

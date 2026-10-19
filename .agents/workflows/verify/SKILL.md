@@ -54,5 +54,9 @@ coverage, the outcome is blocked. Optional omissions need rationale, not a false
 
 For L2/L3, update plan evidence; mark spec implemented and plan completed only when
 actual acceptances, AC, verification, review, and affected documentation are complete.
-For L0/L1, supply the durable change summary without committing automatically.
+For L0/L1, supply the durable change summary for the PR description without committing
+automatically. Never commit to the default branch; "commit and push" means the change
+branch. When the owner authorizes publishing, push the change branch and open or
+update the PR with the template: level, Change-ID, how it was verified, and AC if any.
+Report the `sdd-gate` result, or `blocked` when CI is not active or skipped; never merge.
 An authorized exception is not full verification. Never infer approval or deployment.

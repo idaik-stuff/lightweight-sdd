@@ -47,12 +47,15 @@ class Fixture(unittest.TestCase):
     def rules(self, data):
         self.write(".sdd/risk-rules.json", json.dumps(data))
 
-    def git(self, *args, check=True):
+    def git_env(self):
         env = dict(os.environ, GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
                    GIT_TERMINAL_PROMPT="0")
         for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR"):
             env.pop(key, None)
-        result = subprocess.run(["git", "-C", str(self.root), *args], env=env,
+        return env
+
+    def git(self, *args, check=True):
+        result = subprocess.run(["git", "-C", str(self.root), *args], env=self.git_env(),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=check)
         return result.stdout.decode("utf-8", "surrogateescape").strip()
 
@@ -63,6 +66,10 @@ class Fixture(unittest.TestCase):
         self.git("config", "core.hooksPath", str(self.root / "disabled-hooks"))
         self.git("add", ".")
         self.git("commit", "-qm", "Fixture baseline")
+        # Declare the initial branch as default and work on a change branch, as the rules require.
+        self.default_branch = self.git("branch", "--show-current")
+        self.git("config", "sdd.defaultBranch", self.default_branch)
+        self.git("checkout", "-qb", "chg-fixture")
         return self.git("rev-parse", "HEAD")
 
     def change(self, level="L2", spec_state="draft", plan_state="draft"):

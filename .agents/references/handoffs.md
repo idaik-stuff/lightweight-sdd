@@ -10,7 +10,9 @@ Return a compact block; omit genuinely irrelevant fields for L0/L1:
 
 ```text
 Change: identifier or bounded request; level and rationale.
-Workspace: repository root, branch/worktree if known, and exact change boundary.
+Workspace: repository root, change branch (never the default branch; "commit and
+push" means this branch), PR URL when open (the owner merges it, never the agent),
+worktree if any, and exact change boundary.
 Phase result: produced, unresolved, failed, or blocked; explain what this means.
 Artifacts: spec/plan and only the relevant source paths.
 Authorization: what was actually accepted, by whom or where evidenced; what is missing.
@@ -43,8 +45,8 @@ content hashes can bind evidence to such a snapshot; refresh it after any releva
 Do not treat a hash as proof that a check executed or that the boundary was complete.
 For a committed range, identify both base and target; do not assume `main` or `HEAD~1`.
 
-Retain concise evidence in `plan.md` for L2/L3. For L0/L1, prepare a durable summary in
-an existing record or proposed commit message. Do not make commits without permission.
+Retain concise evidence in `plan.md` for L2/L3. For L0/L1, prepare a durable summary for
+the PR description; squash merge keeps it in Git. Do not make commits without permission.
 Transient logs/patches may live outside tracked product files with permission. Redact
 sensitive content and retain a reproducible summary when a temporary reference expires.
 

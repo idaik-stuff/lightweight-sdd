@@ -19,6 +19,10 @@ reading this file directly. Read `AGENTS.md` and applicable local instructions.
 2. Inspect the relevant code, tests, and worktree. Identify the base and existing user
    changes, including staged and untracked work. Do not reset, overwrite, stage, or
    commit another person's work. Avoid assuming a clean worktree or a `main` branch.
+   Confirm the current branch before the first edit. If it is the default branch, create
+   the change branch (named after the change id) first, carrying uncommitted work with it.
+   Never commit to the default branch; "commit and push" means the change branch.
+   Integrate through a pull request; never merge it, because the owner's merge is the decision.
 3. For an accepted L2/L3 plan, mark execution in progress. Implement one bounded step
    at a time using existing patterns. Add or update tests alongside behavior; for a
    bug, demonstrate pre-fix failure and post-fix success when safely feasible.
@@ -42,7 +46,7 @@ reading this file directly. Read `AGENTS.md` and applicable local instructions.
 Return changed areas, level, acceptance-criteria coverage, checks actually run,
 material deviations, documentation updates, and remaining checks or review.
 Retain durable evidence in the active plan for L2/L3. For L0/L1, prepare the short
-change-record/commit-summary text for the user without committing it automatically.
+change record for the PR description without committing or opening the PR automatically.
 Use the [handoff contract](../../references/handoffs.md) when resuming elsewhere.
 
 ## Exit and escalation
