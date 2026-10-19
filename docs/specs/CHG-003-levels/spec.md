@@ -1,6 +1,6 @@
 # Spec: CHG-003-levels | L1 as the default level, L2 by explicit triggers
 
-Status: `approved` | Level: `L3` | Level rationale: changes the classification contract every agent and adopter follows (`AGENTS.md`, `ci-governance`) and the CI scope policy (`.sdd/ci.json`); a mistake could route risky work through a lighter path or make small work heavier again.
+Status: `implemented` | Level: `L3` | Level rationale: changes the classification contract every agent and adopter follows (`AGENTS.md`, `ci-governance`) and the CI scope policy (`.sdd/ci.json`); a mistake could route risky work through a lighter path or make small work heavier again.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: third of the SDD Lite 2.0 rollout; builds on [CHG-001](../CHG-001-branch-and-pr-workflow/spec.md) (the PR description is the L0/L1 record) and [CHG-002](../CHG-002-gates-on-behavior/spec.md) (evidence guidance). CHG-004 (templates) follows.
 

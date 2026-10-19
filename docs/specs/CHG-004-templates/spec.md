@@ -1,6 +1,6 @@
 # Spec: CHG-004-templates | Spec and plan templates sized by level
 
-Status: `approved` | Level: `L3` | Level rationale: changes the record structure every L2/L3 change in this repository and in adopters' repositories follows, and the templates are read by the `spec` and `plan` workflows of every client; the document gate depends on their placeholder forms.
+Status: `implemented` | Level: `L3` | Level rationale: changes the record structure every L2/L3 change in this repository and in adopters' repositories follows, and the templates are read by the `spec` and `plan` workflows of every client; the document gate depends on their placeholder forms.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: fourth of the SDD Lite 2.0 rollout; follows [CHG-002](../CHG-002-gates-on-behavior/spec.md) (placeholder checks on values) and CHG-003 (L1 as default level, L2 by triggers). CHG-005 (installer) follows.
 

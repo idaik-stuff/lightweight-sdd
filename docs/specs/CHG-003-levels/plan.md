@@ -1,6 +1,6 @@
 # Plan: CHG-003-levels | L1 as the default level, L2 by explicit triggers
 
-Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
+Status: `completed` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -123,4 +123,4 @@ Review limitations: an isolated session of the same model is not human independe
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design; eval scenarios are not run in clients by this change.
 
-Delivery: not merged; not released.
+Delivery: merged by the owner (Idaika Iglesias) through [PR #5](https://github.com/idaik-stuff/lightweight-sdd/pull/5) as squash commit `ac518a8` on 2026-10-19; `sdd-gate` skipped in this repository by design. Not released: the 2.0.0 version is pending the rest of the rollout.

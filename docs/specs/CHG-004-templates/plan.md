@@ -1,6 +1,6 @@
 # Plan: CHG-004-templates | Spec and plan templates sized by level
 
-Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including one-line reasons for unaffected L3 risk areas.
+Status: `completed` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including one-line reasons for unaffected L3 risk areas.
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -114,4 +114,4 @@ Review limitations: an isolated session of the same model is not human independe
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design. `CHANGELOG.md` will conflict with CHG-003 (PR #5) and is resolved after that merge.
 
-Delivery: not merged; not released.
+Delivery: merged by the owner (Idaika Iglesias) through [PR #6](https://github.com/idaik-stuff/lightweight-sdd/pull/6) as squash commit `aefa291` on 2026-10-19; `sdd-gate` skipped in this repository by design. Not released: the 2.0.0 version is pending the rest of the rollout.
