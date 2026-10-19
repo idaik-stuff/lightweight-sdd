@@ -1,6 +1,6 @@
 # Lightweight SDD
 
-Framework version: `1.0.0` | License: [MIT](LICENSE)
+Framework version: `2.0.0` | License: [MIT](LICENSE)
 
 A lightweight spec-driven development (SDD) framework for teams working with AI coding
 agents. It classifies every change by risk (L0–L3), asks for a spec and plan only when

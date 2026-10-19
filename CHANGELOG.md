@@ -5,9 +5,11 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the projec
 [semantic versioning](https://semver.org/). See the
 [maintenance guide](docs/manual/maintenance.md#versions) for what each version level means.
 
-## [Unreleased]
+## [2.0.0] - 2026-10-19
 
-Targets 2.0.0.
+SDD Lite 2.0: lighter process for small changes, the same rigor for L3, and adoption
+through an installer. Changes CHG-001 to CHG-007; each change record is under
+`docs/specs/` in this repository.
 
 ### Changed
 

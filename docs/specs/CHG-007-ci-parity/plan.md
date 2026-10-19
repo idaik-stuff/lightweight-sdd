@@ -1,6 +1,6 @@
 # Plan: CHG-007-ci-parity | Product checks in CI, local CI parity, and product CI settings
 
-Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
+Status: `completed` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -128,4 +128,4 @@ Review limitations: an isolated session of the same model is not human independe
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design, so no live CI run exercises the product settings here. The round-2 fixes (N1-r2, N7, N8, N9 in `policy.py`, the `verify` auto path, and the installer) were not re-reviewed: the owner chose on 2026-10-19 to merge without that focused check, which the reviewer had suggested.
 
-Delivery: not merged; not released.
+Delivery: merged by the owner (Idaika Iglesias) through [PR #12](https://github.com/idaik-stuff/lightweight-sdd/pull/12) as squash commit `4927381` on 2026-10-19; `sdd-gate` skipped in this repository by design. Released as part of 2.0.0 once the owner tags it.
