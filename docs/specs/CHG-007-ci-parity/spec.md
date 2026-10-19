@@ -1,6 +1,6 @@
 # Spec: CHG-007-ci-parity | Product checks in CI, local CI parity, and product CI settings
 
-Status: `approved` | Level: `L3` | Level rationale: changes how CI and local verification choose their target and scope, adds a product-owned CI policy file read from the base, and sets the rules for product checks on a clean runner (`verification-controls`, `ci-governance`); a mistake could route product changes past product checks or lower a scope.
+Status: `implemented` | Level: `L3` | Level rationale: changes how CI and local verification choose their target and scope, adds a product-owned CI policy file read from the base, and sets the rules for product checks on a clean runner (`verification-controls`, `ci-governance`); a mistake could route product changes past product checks or lower a scope.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: last of the SDD Lite 2.0 rollout; it is the addendum deferred by [CHG-001](../CHG-001-branch-and-pr-workflow/spec.md) and the project-governance part left open by [CHG-006](../CHG-006-risk-rules/spec.md). The 2.0.0 release follows.
 

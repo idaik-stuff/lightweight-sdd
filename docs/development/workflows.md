@@ -1,6 +1,6 @@
 # Agent workflow usage
 
-Framework version `1.0.0`. This guide covers the agent workflow layer; [local
+Framework version `2.0.0`. This guide covers the agent workflow layer; [local
 automation](automation.md) and the optional [CI adapter](ci-enforcement.md) are described
 separately. It does not claim measured token savings or validated agent behavior.
 

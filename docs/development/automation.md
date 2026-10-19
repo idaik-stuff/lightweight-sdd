@@ -1,6 +1,6 @@
 # Deterministic automation
 
-Framework version `1.0.0`. This layer executes local checks; it does not replace the
+Framework version `2.0.0`. This layer executes local checks; it does not replace the
 five workflows, acceptance criteria, independent review, or human authorizations. No
 application stack is assumed. The supplied executable checks verify the framework itself.
 
