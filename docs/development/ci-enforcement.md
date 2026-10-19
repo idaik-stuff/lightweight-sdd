@@ -85,13 +85,14 @@ The base [CI policy](../../.sdd/ci.json) maps levels to scopes:
 
 | Declared / required level | CI scope |
 | --- | --- |
-| L0 | focused |
+| L0 | standard |
 | L1 | standard |
 | L2 | standard |
 | L3 | broad |
 
-L1 uses standard in this adapter, although local methodology permits a focused
-check when justified. This is a conservative CI default, not a fifth level.
+L0 and L1 use standard in CI, although local verification for them is focused. A
+mislabelled small change still gets regression checks on the server. This is a
+conservative CI default, not a fifth level.
 Scopes remain cumulative and use the existing check registry. Broad has no
 invented product, load, migration, or security tests.
 
@@ -277,7 +278,7 @@ repository. Keep each one pending until actual platform evidence exists:
 
 | Scenario | Required observation |
 | --- | --- |
-| Valid documentation typo | Focused framework checks; green gate; required human review. |
+| Valid documentation typo | Standard framework checks; green gate; required human review. |
 | Missing/duplicate metadata | Policy failure and blocked merge. |
 | Known L3 path declared L0/L1 | Base risk floor retained; blocked merge. |
 | Product code without registered checks | No framework-only bypass. |

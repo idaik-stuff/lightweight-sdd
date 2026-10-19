@@ -17,17 +17,29 @@
 - Write all repository artifacts (documentation, specs, ADRs, code, comments, commit messages) in English, regardless of the conversation language.
 
 ## Classification and routing
-Evaluate L3 first. If it does not apply, evaluate L0, then L1; everything else is L2.
+Evaluate L3 first, then L0, then the L2 triggers; everything else is L1.
 Risk takes precedence over diff size and labels such as "bug" or "refactor".
 
 | Level | Criteria | Minimum workflow |
 | --- | --- | --- |
-| L0 | Mechanical change with no functional, contractual, or operational effect. | implement -> verify focused |
-| L1 | Local fix or refactor, with no new capability or L3 risk. | investigate if the cause is uncertain -> implement -> verify focused/standard |
-| L2 | Intentionally new or modified behavior, with no L3 risk. | spec -> plan -> implement -> verify standard |
-| L3 | External/public contract; permissions or security boundary; migration with material risk; data loss; irreversible operation; architectural boundary or critical availability. | spec -> plan with strategy (+ design/ADR when appropriate) -> implement -> verify broad + independent review |
+| L0 Mechanical | No functional, contractual, or operational effect. | implement -> verify focused |
+| L1 Quick (default) | Fix, refactor, adjustment, or small new capability whose behavior fits one to three clear AC; no L2 trigger or L3 risk. | investigate if the cause is uncertain -> implement -> verify focused |
+| L2 Feature | Any L2 trigger, with no L3 risk. | spec -> plan -> implement -> verify standard |
+| L3 Critical | External/public contract; permissions or security boundary; migration with material risk; data loss; irreversible operation; architectural boundary or critical availability. | spec -> plan with strategy (+ design/ADR when appropriate) -> implement -> verify broad + independent review |
 
+L2 triggers: T1 ambiguity about what to build; T2 a new user-visible flow (screen, command,
+or flow, not an adjustment); T3 coordinated changes across several areas; T4 more than one
+PR or more than about a day of work; T5 a durable design decision worth recording. The
+owner can always require L2. More than three AC is a signal to check T1 and T3; without a
+trigger the change stays L1.
+
+Before the first change, declare the level in one line with its reason, for example
+`L1: no L2 trigger`, `L2: T1, T3`, or `L3: security boundary`. Raise the level as soon as
+you find a trigger or risk. Only the owner may lower L2 to L1 (or L1 to L0). L3 is never
+lowered by decision: only when evidence shows the L3 risk is absent, never below a path
+floor; a deferred L3 gate is an authorized exception (methodology section 9).
 For L2/L3, use `docs/specs/<change-id>/spec.md` and `plan.md`; do not generate additional artifacts by default.
+For L0/L1, the AC (if any) and evidence go in the PR description.
 For L3, use a different person or an isolated session for review; record its limitations.
 If you discover a higher risk, reclassify before continuing the affected work.
 

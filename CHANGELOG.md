@@ -11,6 +11,16 @@ Targets 2.0.0.
 
 ### Changed
 
+- **Breaking:** L1 Quick is the default level. It covers fixes, refactors, adjustments,
+  and small new capabilities whose behavior fits one to three clear AC. L2 Feature now
+  requires a named trigger (T1 ambiguity, T2 new user-visible flow, T3 coordinated changes
+  across areas, T4 more than one PR or more than about a day, T5 durable design decision), or the
+  owner's request. The order is L3, L0, L2 triggers, L1. The agent declares the level in
+  one line and raises it on its own; only the owner lowers L2 to L1, and L3 is never
+  lowered by decision, only by evidence that the risk is absent. L0 and L3 are
+  unchanged; L2 specs written under 1.0.0 stay valid.
+- CI runs `standard` verification for L0 as well as L1 and L2 (`.sdd/ci.json`); local
+  L0/L1 verification stays `focused`.
 - **Breaking:** `scripts/check-change-level` and `scripts/verify` fail when the default
   branch has changes against the base, and when the default branch cannot be determined
   (repository-local `git config sdd.defaultBranch`, else `origin/HEAD`) or the declaration
