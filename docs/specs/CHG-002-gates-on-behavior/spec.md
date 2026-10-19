@@ -1,6 +1,6 @@
 # Spec: CHG-002-gates-on-behavior | Placeholder checks on values, not prose
 
-Status: `approved` | Level: `L3` | Level rationale: changes what the framework's own document gate accepts as an accepted spec or plan (`verification-controls`: `scripts/sdd/**`). A mistake could let real placeholders through or keep blocking legitimate domain vocabulary.
+Status: `implemented` | Level: `L3` | Level rationale: changes what the framework's own document gate accepts as an accepted spec or plan (`verification-controls`: `scripts/sdd/**`). A mistake could let real placeholders through or keep blocking legitimate domain vocabulary.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: second of the SDD Lite 2.0 rollout; follows [CHG-001](../CHG-001-branch-and-pr-workflow/spec.md) (branch and PR rule). CHG-003 (levels) and CHG-004 (templates) build on it.
 
