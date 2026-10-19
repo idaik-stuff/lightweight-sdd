@@ -1,6 +1,6 @@
 # Plan: CHG-001-branch-and-pr-workflow | Branch and pull request for every change
 
-Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
+Status: `completed` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -163,4 +163,4 @@ Review limitations: an isolated session of the same model is not human independe
 
 Outstanding items / exceptions: `sdd-gate` and `sdd-direct-push` are skipped in this repository by design, so the PR has no server-side gate; AC-09 has no live GitHub evidence. The untracked `FEEDBACK-pending-placeholder-false-positive.md` (input for CHG-002) is present in the verified snapshot.
 
-Delivery: not merged; not released.
+Delivery: merged by the owner (Idaika Iglesias) through [PR #1](https://github.com/idaik-stuff/lightweight-sdd/pull/1) as squash commit `3d54c13` on 2026-10-19; `sdd-gate` skipped in this repository by design. Not released: the 2.0.0 version is pending the rest of the rollout.
