@@ -3,17 +3,23 @@
 Status: `draft` | Technical owner: `TBD` | Accepted by / date: `TBD`.
 Spec: [spec.md](spec.md) | Verification scope: `TBD`.
 
-Copy this template alongside the spec. Do not change requirements through the plan. Remove irrelevant sections; for evaluated risks, leave `N/A - reason` if it helps explain the decision.
+Copy this template alongside the spec. The italic line under each heading says whether the section is required, optional, or only needed in a given case, for L2 and for L3. Keep the sections your level requires and the conditional ones whose condition holds, add optional sections only when they help, and delete the rest; do not write `N/A`. Delete the italic marker lines too when you fill in the record. An L2 plan aims at about one page. Do not change requirements through the plan.
 
 ## System inspection
+
+*L2: required, brief · L3: required*
 
 TBD - Code, tests, contracts, and documents examined; confirmed behavior and gaps. Do not propose module names as though they already exist without inspecting them.
 
 ## Technical approach
 
+*L2: required · L3: required*
+
 TBD - The smallest change that satisfies the spec, relevant alternatives rejected, and why. Reference an ADR when the decision warrants that record; do not copy its content.
 
 ## Affected components and contracts
+
+*L2: optional · L3: required*
 
 | Area / path | Proposed change | Impact / consumer |
 | --- | --- | --- |
@@ -21,9 +27,11 @@ TBD - The smallest change that satisfies the spec, relevant alternatives rejecte
 
 ## Risk-proportionate strategy
 
-For L2, develop only what applies. For L3, explicitly evaluate the affected areas; unchanged areas do not need lengthy responses.
+*L2: only applicable rows · L3: required, all six areas*
 
-| Area | Decision, check, or reason for non-applicability |
+For L2, keep only the rows that apply. For L3, evaluate every area; an area that is not affected states why in one line, and unchanged areas do not need lengthy responses.
+
+| Area | Decision, check, or reason it is not affected |
 | --- | --- |
 | Compatibility and consumers | TBD |
 | Data, integrity, and migration | TBD |
@@ -34,12 +42,16 @@ For L2, develop only what applies. For L3, explicitly evaluate the affected area
 
 ## Implementation steps
 
+*L2: only if more than one step · L3: required*
+
 1. TBD - A bounded change and a verifiable outcome.
 2. TBD - The next increment, only if necessary.
 
 Do not create `tasks.md` by default. Add steps only if they reduce uncertainty or help implement and review the change.
 
 ## Verification plan and traceability
+
+*L2: required · L3: required*
 
 | AC / risk | Test, check, or manual procedure | Command / location / environment | Expected result |
 | --- | --- | --- | --- |
@@ -49,13 +61,19 @@ Reference real commands from the README. A single test may cover several AC. For
 
 ## Affected documentation
 
-TBD - Which living document or contract must be updated and why; use `N/A - reason` when not applicable. Do not rewrite all old specs.
+*L2: required, one line · L3: required*
+
+TBD - Which living document or contract must be updated and why, or "none". Do not rewrite all old specs.
 
 ## Deviations and decisions during execution
+
+*L2: only if any · L3: required*
 
 None recorded yet. Add only material deviations: rationale, impact, and acceptance when required. Do not turn this section into a conversation transcript.
 
 ## Completion evidence
+
+*L2: required · L3: required, with independent review*
 
 Verified version or diff: pending. Relevant environment: pending.
 

@@ -131,8 +131,10 @@ loan. Draft the spec only.
 ```
 
 The agent creates `docs/specs/CHG-001-book-reservations/spec.md` from the
-[spec template](../templates/spec.md): problem and goal, current behavior, scope and
-non-goals (for example "no notifications in this change"), expected behavior, and
+[spec template](../templates/spec.md). An italic line under each template heading says
+whether the section is required, optional, or conditional for L2 and for L3; sections
+that do not apply are deleted. This spec keeps problem and goal, current behavior,
+scope and non-goals (for example "no notifications in this change"), expected behavior, and
 acceptance criteria such as:
 
 | ID | Scenario / precondition | Action | Observable outcome |
@@ -213,8 +215,8 @@ The route is the same as L2, with four additions.
 address each area explicitly: compatibility (existing desk workflows), data (existing
 members, a first administrator), security (password storage, sessions, lockout),
 failures, observability (sign-in failures are visible), and rollout and recovery
-(what if no one can sign in?). An area that does not apply gets `N/A - reason`, not
-silence. The [risk checks](../../.agents/references/risk-checks.md) give the questions
+(what if no one can sign in?). An area that is not affected states in one line why,
+not silence. The [risk checks](../../.agents/references/risk-checks.md) give the questions
 for each area.
 
 **2. An ADR when there is a real decision.** "Local accounts or the city's single

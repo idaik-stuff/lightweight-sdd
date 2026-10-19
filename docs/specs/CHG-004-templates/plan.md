@@ -1,6 +1,6 @@
 # Plan: CHG-004-templates | Spec and plan templates sized by level
 
-Status: `approved` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including one-line reasons for unaffected L3 risk areas.
+Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including one-line reasons for unaffected L3 risk areas.
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -34,7 +34,8 @@ Rejected alternatives:
 | --- | --- | --- |
 | `docs/templates/spec.md`, `plan.md` | Markers, legend, `Related changes:`, AC sentence, no `N/A` instruction | Authors and the `spec`/`plan` workflows in every client; adopters' new records |
 | `.agents/workflows/spec/SKILL.md`, `plan/SKILL.md` | Point to the markers | All clients (thin wrappers unchanged) |
-| `docs/manual/03-working-a-change.md` | One sentence on markers | Readers |
+| `docs/manual/03-working-a-change.md` | One sentence on markers; L3 risk-area wording (one-line reason) | Readers |
+| `docs/manual/example/README.md` | Note that the example predates the 2.0.0 templates | Readers |
 | `scripts/tests/test_docs.py` | Template-structure and lean-L2 tests | Framework tests |
 | `CHANGELOG.md` | Entry | Adopters |
 
@@ -73,21 +74,42 @@ Environment: Windows 11 with Python 3; Linux via WSL Ubuntu for the full suites.
 
 ## Affected documentation
 
-`docs/templates/spec.md`, `docs/templates/plan.md`, `.agents/workflows/spec/SKILL.md`, `.agents/workflows/plan/SKILL.md`, `docs/manual/03-working-a-change.md`, `CHANGELOG.md`.
+`docs/templates/spec.md`, `docs/templates/plan.md`, `.agents/workflows/spec/SKILL.md`, `.agents/workflows/plan/SKILL.md`, `docs/manual/03-working-a-change.md`, `docs/manual/example/README.md`, `CHANGELOG.md`.
 
 ## Deviations and decisions during execution
 
-None recorded yet.
+- Independent review round 1 (owner accepted the corrections, 2026-10-19, in conversation):
+  - F1: `docs/manual/03-working-a-change.md` now says an unaffected L3 risk area states in one line why; the manual example README notes that the example predates the 2.0.0 templates. Plan step 5's reason for keeping the old wording did not hold, because the owner's decision concerns exactly those risk areas.
+  - F2: interpretation recorded: "Acceptance and next steps" is marked required for L2 as well, although decision 3's L2 list does not name it, because it holds the scope-acceptance statement and the plan link. Owner confirmed.
+  - F3: the template legends and the `spec`/`plan` workflows say to keep required sections and conditional ones whose condition holds; workflow step 4 in both now depends on the level.
+  - F4: the legends say to delete the italic marker lines when filling a record; the lean L2 test runs through `check_docs` with the markers deleted and with them kept.
+  - F5: long lines rewrapped in the plan workflow and manual 03.
 
 ## Completion evidence
 
-Verified version or diff: pending. Relevant environment: pending.
+Verified version or diff: working snapshot on branch `chg-004-templates` (HEAD `99ed5c2` plus uncommitted changes; snapshot in the Broad gate row), base `main` (`381748f`).
+Relevant environment: Windows 11, Git for Windows, Python 3.14.7; Linux via WSL Ubuntu (native ext4 copy written from the index), Python 3.14.4.
 
 | AC / check | Result | Evidence summary / reference |
 | --- | --- | --- |
-| AC-01 to AC-07 | Not run | Pending implementation. |
+| AC-01, AC-02 | Passed (review) | Templates carry a legend and a marker under every heading as listed in Technical approach steps 2 and 3; spec header has `Related changes:`; AC sentence present; no `N/A` instruction. |
+| AC-03 | Passed | `test_docs.py` `test_template_sections_carry_level_markers`. Mutation check: deleting one spec marker, or renaming `Related changes:`, made it fail; restoring made it pass. |
+| AC-04 | Passed | `test_unchanged_templates_as_accepted_records_fail` unchanged and passing. |
+| AC-05 | Passed | `test_lean_l2_record_with_required_sections_passes`: implemented L2 spec with only its required sections and completed plan with only its required sections, checked through `check_docs`, with marker lines deleted and kept; no errors. |
+| AC-06 | Passed | `python3 .agents/tools/sync_adapters.py --check`: 20 generated files, 0 stale; `spec` and `plan` workflows point to the markers, including conditional sections. |
+| AC-07 | Passed | `python3 scripts/check-docs`: passed; existing change records unchanged; broad gate below. |
+| Full suites | Passed | Windows: 216 automation tests (6 platform skips) and 57 adapter tests. Linux native ext4 copy: 216 (1 skip) and 57. |
+| Level floor | Passed | `python3 scripts/check-change-level --base main --level L3 --change CHG-004-templates --scope broad`: floor L3 (`agent-integration-controls`). |
+| Broad gate | Passed | `python3 scripts/verify broad --target framework --base main --level L3 --change CHG-004-templates`: docs, adapters, adapter-tests, automation-tests passed on snapshot `ecb1213373948854` (after both review rounds; earlier runs `08dc55772c666339`, `bd66eb42e05ccd5d`); report `.sdd/results/verify-20261019T141249436574Z-01fad395.json` (local, untracked); only this line changed afterwards. |
 
-Independent review: pending; required for L3.
+Independent review: automated reviewer (`sdd-independent-review`, Claude sub-agent), fresh context without the implementation conversation (a different reviewer from CHG-001 to CHG-003), read-only tools; it ran no code, and every count, hash, and result it cites is requester-supplied. Round 2 resumed the same reviewer context. Not a human review or approval.
+
+| Round | Target | Result | Resolution |
+| --- | --- | --- | --- |
+| 1 | Full patch vs `main`, snapshot `08dc55772c666339` | No blocking findings. Non-blocking: F1 (manual 03 still asked for `N/A - reason` in L3 risk areas), F2 (L2 status of Acceptance and next steps is an interpretation; question), F3 ("delete the rest" ambiguous for conditional sections; workflow step 4 not level-aware), F4 (lean test without markers and not through `check_docs`; legend silent on marker lines), F5 (long lines) | All fixed; F2 confirmed by the owner; see Deviations |
+| 2 | Full patch vs `main`, snapshot `bd66eb42e05ccd5d` | No blocking findings. Non-blocking: R2-1 (new long line in the plan workflow), R2-2 (Affected documentation and components omitted the example README) | Both fixed (wording only); no re-review required |
+
+Review limitations: an isolated session of the same model is not human independence; round 2 was not a fresh context. Not exercised: CI (`sdd-gate` skipped in this repository).
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design. `CHANGELOG.md` will conflict with CHG-003 (PR #5) and is resolved after that merge.
 

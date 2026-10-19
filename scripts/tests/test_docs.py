@@ -1,3 +1,5 @@
+import re
+
 from support import Fixture, ROOT
 from sdd.common import ConfigError
 from sdd.docs import anchors, check_docs, validate_change
@@ -220,6 +222,90 @@ class DocumentationTests(Fixture):
             for message in messages:
                 with self.subTest(state=spec_state, message=message):
                     self.assertTrue(any(message in e for e in errors), errors)
+
+    def test_template_sections_carry_level_markers(self):
+        marker = re.compile(r"^\*L2: (required|optional|only [^·*]+)(, [^·*]+)? · "
+                            r"L3: (required|optional|only [^·*]+)(, [^·*]+)?\*$")
+        for name in ("spec", "plan"):
+            lines = (ROOT / f"docs/templates/{name}.md").read_text(encoding="utf-8").splitlines()
+            headings = [i for i, line in enumerate(lines) if line.startswith("## ")]
+            self.assertTrue(headings)
+            for index in headings:
+                with self.subTest(template=name, heading=lines[index]):
+                    following = next(line for line in lines[index + 1:] if line.strip())
+                    self.assertRegex(following, marker)
+            self.assertNotIn("N/A - reason", "\n".join(lines))
+        spec_header = (ROOT / "docs/templates/spec.md").read_text(encoding="utf-8").split("\n## ")[0]
+        self.assertIn("Related changes:", spec_header)
+
+    def test_lean_l2_record_with_required_sections_passes(self):
+        # With the marker lines deleted, as the templates ask, and kept by mistake.
+        for keep_markers in (False, True):
+            with self.subTest(keep_markers=keep_markers):
+                self.lean_record(keep_markers)
+                result = check_docs(self.root, change="CHG-901-lean")
+                self.assertEqual(result["errors"], [])
+
+    def lean_record(self, keep_markers):
+        ident = "CHG-901-lean"
+        mark = "\n\n*L2: required · L3: required*" if keep_markers else ""
+        heading = lambda text: re.sub(r"(?m)^(## .+)$", lambda m: m.group(1) + mark, text)
+        self.write(f"docs/specs/{ident}/spec.md", heading("""# Spec: CHG-901-lean | Export the reading list
+
+Status: `implemented` | Level: `L2` | Level rationale: `T2: a new export command`.
+Owner: `Owner` | Scope accepted by / date: `Owner / 2026-10-19`.
+Related changes: none.
+
+## Problem and goal
+
+Members cannot take their reading list elsewhere.
+
+## Scope and non-goals
+
+Includes: a CSV export. Does not include: imports.
+
+## Acceptance criteria
+
+| ID | Scenario / precondition | Action | Observable outcome |
+| --- | --- | --- | --- |
+| AC-01 | A list with two books | Export | A CSV with two rows |
+| AC-02 | An empty list | Export | A CSV with only the header |
+
+## Acceptance and next steps
+
+Scope acceptance: accepted by Owner on 2026-10-19. Related plan: [plan.md](plan.md).
+"""))
+        self.write(f"docs/specs/{ident}/plan.md", heading("""# Plan: CHG-901-lean | Export the reading list
+
+Status: `completed` | Technical owner: `Owner` | Accepted by / date: `Owner / 2026-10-19`.
+Spec: [spec.md](spec.md) | Verification scope: `standard`.
+
+## System inspection
+
+The list view already loads every book.
+
+## Technical approach
+
+Add an export handler that writes CSV.
+
+## Verification plan and traceability
+
+| AC / risk | Test, check, or manual procedure | Command / location / environment | Expected result |
+| --- | --- | --- | --- |
+| AC-01, AC-02 | Unit tests | `verify standard` | Pass |
+
+## Affected documentation
+
+None.
+
+## Completion evidence
+
+Verified version or diff: abc1234. Relevant environment: CI.
+
+| AC / check | Result | Evidence summary / reference |
+| --- | --- | --- |
+| AC-01, AC-02 | Passed | CI run on the PR. |
+"""))
 
     def test_approved_plan_requires_recorded_acceptance(self):
         ident = self.change(plan_state="approved")
