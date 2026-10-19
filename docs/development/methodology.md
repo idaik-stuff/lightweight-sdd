@@ -6,11 +6,11 @@ This document expands on [AGENTS.md](../../AGENTS.md). Classification and routes
 
 ## 1. Starting and classifying work
 
-Determine the requested outcome and inspect the relevant area. Classify by risk before size. For a small change, a sentence is enough: "L1: fixes an internal calculation without modifying contracts". For L2/L3, record the level and its rationale in the spec.
+Determine the requested outcome and inspect the relevant area. Classify by risk before size. Declare the level in one line before the first change: "L1: fixes an internal calculation without modifying contracts", "L2: T2, a new export command". Name the L2 trigger from [AGENTS.md](../../AGENTS.md); if none applies and there is no L3 risk, the change is L1. For L2/L3, also record the level and its rationale in the spec.
 
 A one-line permissions fix is L3, not L1. A text change that alters recovery instructions or a contract is not necessarily L0. Do not downgrade a change because its files appear simple.
 
-If an uncertainty could trigger L3, investigate enough to classify the change. Do not escalate merely because a trivial detail is unknown, or downgrade for convenience. Discovering new impact requires updating the level, plan, and gates before proceeding with the affected work.
+If an uncertainty could trigger L3, investigate enough to classify the change. Do not escalate merely because a trivial detail is unknown, or downgrade for convenience. Discovering new impact requires updating the level, plan, and gates before proceeding with the affected work. The agent raises a level on its own. Only the owner lowers L2 to L1 or L1 to L0; L3 is lowered only when evidence shows the L3 risk is absent, never below a path floor, and a deferred L3 gate follows section 9.
 
 ## 2. Starting a product
 

@@ -1,6 +1,8 @@
 ## Change
 
-Describe the change and why it is needed. Explain the level; risk overrides size.
+Describe the change and why it is needed. Explain the level in one line, naming the
+L2 trigger or L3 risk when there is one (for example `L1: no L2 trigger`, `L2: T2`);
+risk overrides size.
 For L0/L1 this description is the change record: squash merge keeps it in Git.
 
 <!-- sdd:metadata -->

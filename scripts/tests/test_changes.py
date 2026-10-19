@@ -85,6 +85,14 @@ class ChangeTests(Fixture):
         self.assertEqual(report["required_level"], "L3")
         self.assertEqual(report["status"], "passed")
 
+    def test_local_l0_and_l1_accept_focused(self):
+        base = self.init_git()
+        self.write("README.md", "change")
+        for level in ("L0", "L1"):
+            with self.subTest(level=level):
+                report = assess(self.root, base, level, scope="focused")
+                self.assertEqual((report["status"], report["minimum_scope"]), ("passed", "focused"))
+
     def test_l3_focused_fails(self):
         base = self.init_git()
         ident = self.change(level="L3")

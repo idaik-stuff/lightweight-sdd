@@ -31,10 +31,10 @@ depends on what could go wrong, not on how many lines change:
 
 | Level | Intuition | Example in a small library app |
 | --- | --- | --- |
-| L0 | Nothing behaves differently. | Fix a typo in a help page. |
-| L1 | A local fix inside existing behavior. | Due dates are off by one day for loans made at midnight. |
-| L2 | Intentionally new or changed behavior. | Members can reserve a book that is currently on loan. |
-| L3 | Hard to undo or affecting trust boundaries. | Add sign-in and restrict who can delete a member. |
+| L0 Mechanical | Nothing behaves differently. | Fix a typo in a help page. |
+| L1 Quick (default) | A fix, adjustment, or small new capability with one to three clear AC. | Due dates are off by one day for loans made at midnight; add a "sort by title" option to the catalogue. |
+| L2 Feature | An L2 trigger: unclear what to build, a new user-visible flow, coordinated changes across areas, more than one PR or more than about a day of work, or a durable design decision. | Members can reserve a book that is currently on loan (a new flow). |
+| L3 Critical | Hard to undo or affecting trust boundaries. | Add sign-in and restrict who can delete a member. |
 
 A one-line change to a permission check is L3. A thousand-line rename with no
 behavioral effect can be L0. Labels such as "bug" or "refactor" do not lower the level.

@@ -27,7 +27,7 @@ Closed design decision (ideation, 2026-10-19, point A):
 - L2 Feature applies when any trigger holds: T1 ambiguity about what to build; T2 a new user-visible flow (screen, command, or flow, not an adjustment); T3 several areas with coordinated changes; T4 more than one PR or more than about one day of work; T5 a durable design decision worth recording. The owner can always force L2.
 - L3 Critical: unchanged criteria and path floors.
 - Evaluation order: L3, then L0, then L2 triggers, then L1.
-- The agent declares the level in one line at the start, citing triggers (for example `L2: T1, T3`). It escalates on its own; only the owner downgrades.
+- The agent declares the level in one line at the start, citing triggers (for example `L2: T1, T3`). It escalates on its own; only the owner downgrades. Clarified by the owner on 2026-10-19 after review: the owner may lower L2 to L1 (or L1 to L0); L3 is lowered only when evidence shows the L3 risk is absent, never below a path floor, and a deferred L3 gate is an authorized exception (methodology section 9).
 - Routes unchanged. Verification: locally L0/L1 focused, L2 standard, L3 broad; in CI standard for L0-L2 and broad for L3.
 
 ## Scope and non-goals
@@ -50,7 +50,7 @@ Does not include:
 ## Expected behavior
 
 - An agent classifying a change answers in order: L3 criteria; L0 (no functional, contractual, or operational effect); any of T1-T5 (L2); otherwise L1.
-- Before its first change, the agent writes one line such as `L1: no L2 trigger`, `L2: T2`, or `L3: security boundary`. If it later finds a trigger or an L3 risk, it raises the level and says why; it never lowers a level unless the owner says so.
+- Before its first change, the agent writes one line such as `L1: no L2 trigger`, `L2: T2`, or `L3: security boundary`. If it later finds a trigger or an L3 risk, it raises the level and says why; it never lowers a level unless the owner says so, and an L3 is not lowered by preference, only by evidence that the risk is absent.
 - A small new capability with one to three clear AC and no trigger is L1: no spec or plan; its AC and evidence live in the PR description.
 - A change touching an L3 path floor is still blocked when declared below L3.
 - CI runs at least standard verification for every L0-L2 PR; local L0/L1 verification stays focused.
@@ -60,13 +60,13 @@ Does not include:
 | ID | Scenario / precondition | Action | Observable outcome |
 | --- | --- | --- | --- |
 | AC-01 | Updated `AGENTS.md` | Read the classification section | Order L3, L0, L2 triggers, L1; L1 includes small capabilities with one to three clear AC; L2 lists T1-T5 and the owner's right to force L2; L1 route is "verify focused" |
-| AC-02 | Updated `AGENTS.md` | Read it | Requires a one-line level declaration citing triggers before the first change; the agent may only raise a level, the owner may lower it |
+| AC-02 | Updated `AGENTS.md` | Read it | Requires a one-line level declaration citing triggers before the first change; the agent may only raise a level; the owner may lower L2 to L1 or L1 to L0; L3 is lowered only by evidence that the risk is absent, never below a path floor |
 | AC-03 | Shipped `.sdd/ci.json` | Run the new policy test | L0, L1, L2 select `standard`; L3 selects `broad` |
 | AC-04 | PR declaring L0 in an adopter with this policy as base | `ci.py` assesses it | Selected scope is `standard`, not `focused` |
 | AC-05 | A change touching an L3 path floor declared L1 or L2 | Run `scripts/check-change-level` | Fails as in 1.0.0 (unchanged) |
 | AC-06 | Local L0 or L1 change | Run `scripts/check-change-level --scope focused` | Passes the scope check, as in 1.0.0 |
 | AC-07 | Methodology, CI enforcement guide, manual pages, PR template | Read them | No statement says that new behavior is L2 regardless of size, or that L2 is the default; the CI scope table shows L0 standard |
-| AC-08 | Updated eval scenarios | Read them | E04 and new scenarios cover: small capability is L1; T1-T5 each lead to L2 with the trigger named; owner-forced L2; agent never lowers a level on its own |
+| AC-08 | Updated eval scenarios | Read them | E04 and new scenarios cover: small capability is L1; T1-T5 each lead to L2 with the trigger named; owner-forced L2; agent never lowers a level on its own; an owner's preference does not lower an L3 |
 | AC-09 | Repository at the end of this change | Run `scripts/check-docs` and `scripts/verify broad --target framework` | Pass |
 
 AC-04 and AC-05 are the boundaries: CI never gets lighter for L0, and an L3 path still cannot be declared lower.
@@ -83,7 +83,7 @@ None open. The level rules are the closed ideation decision A (2026-10-19).
 
 ## Acceptance and next steps
 
-Scope acceptance: accepted by Idaika Iglesias on 2026-10-19 (in conversation), with AC-01 to AC-09. Next: plan with strategy.
+Scope acceptance: accepted by Idaika Iglesias on 2026-10-19 (in conversation), with AC-01 to AC-09. After independent review round 1 (same day), the owner clarified the downgrade rule (AC-02, AC-08 wording) and accepted the T4 and more-than-three-AC wording.
 
 Related plan: [plan.md](plan.md). States and completion rules: [docs/specs/README.md](../README.md).
 
