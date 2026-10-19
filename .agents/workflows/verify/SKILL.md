@@ -27,7 +27,8 @@ Update evidence in the plan when authorized by the current change.
 4. Inspect configured commands before execution. Use `python3 scripts/verify <scope>`
    with an explicit `--base`, `--level`, and `--change` for L2/L3. Read the
    [automation contract](../../../docs/development/automation.md) only when needed.
-   The default product target blocks without real product checks; `--target framework`
+   Prefer `--target auto`, which picks the target CI would pick for the change. The
+   default product target blocks without real product checks; `--target framework`
    is for framework-only checks, never a substitute for product evidence. For an L0
    document-only change, a targeted `scripts/check-docs` run and diff inspection can
    suffice. Do not install missing tools or treat a dry run as successful execution.

@@ -65,6 +65,12 @@ Targets 2.0.0.
 
 ### Added
 
+- `scripts/verify --target auto` (requires `--base`): picks the target CI would pick, with
+  the same routing rule and policy files, and records the choice in the report.
+- `.sdd/product-ci.json` (product-owned, never replaced): extra `framework_paths` and
+  raised `scopes` for CI; lowering a scope is rejected. CI reads it from the base.
+- Guidance for running product checks on a clean CI runner: the first product check
+  installs pinned dependencies, and newly registered checks first run on the next PR.
 - `scripts/install`: installs or upgrades the framework in a product repository for the
   chosen clients only (`--target`, `--clients`, `--dry-run`, `--allow-dirty-source`). It
   requires a clean change branch and a clean framework checkout, refuses before writing

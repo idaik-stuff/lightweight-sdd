@@ -16,6 +16,7 @@
     ".sdd/risk-rules.json",
     ".sdd/product-risk-rules.json",
     ".sdd/ci.json",
+    ".sdd/product-ci.json",
     "docs/**",
     "scripts/verify",
     "scripts/check-docs",

@@ -93,6 +93,25 @@ The base [CI policy](../../.sdd/ci.json) maps levels to scopes:
 L0 and L1 use standard in CI, although local verification for them is focused. A
 mislabelled small change still gets regression checks on the server. This is a
 conservative CI default, not a fifth level.
+
+A product can tighten this without editing the framework-owned `.sdd/ci.json`, in
+its own `.sdd/product-ci.json`, which upgrades never replace:
+
+```json
+{"version": 1, "framework_paths": ["tools/release/**"], "scopes": {"L2": "broad"}}
+```
+
+`framework_paths` adds paths that CI routes as framework policy (their floors still
+come from the risk rules); changes that touch only those paths run no product checks,
+so list governance files, never product code. Patterns use shell-style matching in
+which `*` also crosses `/` (so `*.py` means every Python file); a pattern that matches
+arbitrary product paths is rejected. `scopes` raises a level's scope; a lower scope, an unknown key, or an
+invalid pattern is rejected. CI reads the file from the base, so a PR's own
+edits to it apply from the next PR, and editing it is L3. Locally,
+`scripts/verify MODE --target auto --base BASE --level LEVEL` applies the same routing
+with the routing and scope files committed at `BASE` (the check registry and risk rules
+still come from the working tree unless `--policy-root` is given), records the chosen target and the CI scope for the
+level, and warns when `MODE` is lower than that scope.
 Scopes remain cumulative and use the existing check registry. Broad has no
 invented product, load, migration, or security tests.
 
@@ -360,8 +379,11 @@ and risk-specific checks in `.sdd/verification.json`. The commands must be
 reviewed, noninteractive, bounded, and appropriate for the environment.
 Nothing in this release selects npm, uv, Maven, Docker, a database, or a cloud.
 
-The template begins with no product checks. Adding or changing a check is a
-reviewed framework/configuration change (L3 under the default risk rules). Use
+The installed framework begins with no product checks. Adding or changing a check is a
+reviewed framework/configuration change (L3 under the default risk rules). Product
+checks run on a clean runner; see
+[connecting the product](automation.md#connecting-the-product) for dependency
+installation and the registration order. Use
 `--dry-run` when a command cannot run in the current environment; never claim that it
 passed. Record any remaining prerequisite explicitly.
 

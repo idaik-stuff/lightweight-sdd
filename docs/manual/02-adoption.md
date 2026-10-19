@@ -45,7 +45,7 @@ uncommitted changes, and lists every collision without writing anything. It writ
 | Owner | Files | On upgrade |
 | --- | --- | --- |
 | Framework | `AGENTS.md`, `.agents/` workflows, review, references, evals, the chosen clients' entrypoints, `.github/` workflows and templates, `scripts/`, `docs/development/`, `docs/templates/`, `docs/README.md`, `docs/specs/README.md`, `.sdd/risk-rules.json` (framework floors), `.sdd/ci.json` | Replaced |
-| Product | `README.md` (only if missing), `docs/product/`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`, `.sdd/verification.json`, `.sdd/product-risk-rules.json` (product floors) | Created if missing, never replaced |
+| Product | `README.md` (only if missing), `docs/product/`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`, `.sdd/verification.json`, `.sdd/product-risk-rules.json` (product floors), `.sdd/product-ci.json` (product CI settings) | Created if missing, never replaced |
 | Record | `.sdd/install.json`: framework version, commit, clients, and installed files | Updated |
 
 On Windows, run the `git add --chmod=+x` command it prints so the entrypoints and the
@@ -119,7 +119,9 @@ As soon as the stack has real lint, type, test, or build commands, register them
 2. Assign it to the cumulative `focused`, `standard`, or `broad` product profile.
 3. Document it in the README **Commands** table.
 4. Run `python3 scripts/verify standard --base BASE --level LEVEL` and inspect the
-   result.
+   result. Put a check that installs pinned dependencies (for example `npm ci`) first
+   in the product `focused` profile: CI runs on a clean runner, and the new checks
+   first run in CI on the PR after the one that registers them.
 
 Until then, product verification reports `blocked`. That is intended: it prevents an
 empty suite from passing. Never register a placeholder command just to make it green.

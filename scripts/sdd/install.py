@@ -11,7 +11,8 @@ import sys
 import tempfile
 
 from .changes import LEVELS, branch_guard, matches
-from .common import ConfigError, git, git_root, relative_path
+from .common import ConfigError, git, git_root, load_json, relative_path
+from .policy import PRODUCT_CI, merge
 
 SOURCE = Path(__file__).resolve().parents[2]
 CLIENTS = ("claude", "codex", "cursor", "copilot-vscode")
@@ -40,7 +41,7 @@ CLIENT_FILES = {
 # Product-owned: created when missing (install or upgrade), never replaced.
 PRODUCT = ("docs/product/brief.md", "docs/product/mvp.md", "docs/product/prd.md",
            "docs/architecture/overview.md", "docs/adr/README.md", "docs/project-rules.md",
-           PRODUCT_RULES)
+           PRODUCT_RULES, PRODUCT_CI)
 GENERATOR_CHECKS = {"adapters", "adapter-tests"}
 REQUIRED_LINES = {".gitignore": (".sdd/results/",), ".gitattributes": ("* text=auto eol=lf",)}
 CODEOWNERS_EXAMPLE = ".github/CODEOWNERS.example"
@@ -160,7 +161,7 @@ def read_json(target: Path, path: str) -> dict:
     reason = unsafe(target, path)
     if reason:
         raise ConfigError(f"Cannot read {path}: {reason}")
-    return json.loads((target / path).read_text(encoding="utf-8"))
+    return load_json(target / path)
 
 
 def mode(target: Path, clients: list[str] | None) -> tuple[str, list[str], list[str] | None]:
@@ -274,6 +275,9 @@ def plan(source: Path, target: Path, clients: list[str] | None, dirty: bool) -> 
     shipped[FRAMEWORK_RULES] = framework_rules(source)
     if upgrade:
         rules_guard(target, shipped[FRAMEWORK_RULES])
+        if present(target, PRODUCT_CI):
+            # The product's CI settings must stay valid against the CI policy this version ships.
+            merge(json.loads(shipped[".sdd/ci.json"]), read_json(target, PRODUCT_CI))
     modes = executable_paths(source)
     product = {p: (source / p).read_bytes() for p in PRODUCT}
     product[".sdd/verification.json"] = product_verification(source)

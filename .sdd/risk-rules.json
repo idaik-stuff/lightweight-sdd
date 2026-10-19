@@ -31,6 +31,7 @@
       "paths": [
         ".github/**",
         ".sdd/ci.json",
+        ".sdd/product-ci.json",
         "scripts/check-ci",
         "scripts/check-ci-setup",
         "AGENTS.md",
