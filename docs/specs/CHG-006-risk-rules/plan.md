@@ -1,6 +1,6 @@
 # Plan: CHG-006-risk-rules | Framework and product risk rules, and path mapping
 
-Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
+Status: `completed` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -120,4 +120,4 @@ Review limitations: an isolated session of the same model is not human independe
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design. The round-2 N2 change to `rules_guard()` (comparing against the same-ID product rule, with its test) was not re-reviewed: the owner chose on 2026-10-19 to merge without that focused check, which the reviewer had advised.
 
-Delivery: not merged; not released.
+Delivery: merged by the owner (Idaika Iglesias) through [PR #10](https://github.com/idaik-stuff/lightweight-sdd/pull/10) as squash commit `baa5770` on 2026-10-19; `sdd-gate` skipped in this repository by design. Not released: the 2.0.0 version is pending CHG-007.
