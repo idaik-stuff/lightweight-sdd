@@ -44,8 +44,8 @@ uncommitted changes, and lists every collision without writing anything. It writ
 
 | Owner | Files | On upgrade |
 | --- | --- | --- |
-| Framework | `AGENTS.md`, `.agents/` workflows, review, references, evals, the chosen clients' entrypoints, `.github/` workflows and templates, `scripts/`, `docs/development/`, `docs/templates/`, `docs/README.md`, `docs/specs/README.md` | Replaced |
-| Product | `README.md` (only if missing), `docs/product/`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`, `.sdd/verification.json`, `.sdd/ci.json`, `.sdd/risk-rules.json` | Created if missing, never replaced |
+| Framework | `AGENTS.md`, `.agents/` workflows, review, references, evals, the chosen clients' entrypoints, `.github/` workflows and templates, `scripts/`, `docs/development/`, `docs/templates/`, `docs/README.md`, `docs/specs/README.md`, `.sdd/risk-rules.json` (framework floors), `.sdd/ci.json` | Replaced |
+| Product | `README.md` (only if missing), `docs/product/`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`, `.sdd/verification.json`, `.sdd/product-risk-rules.json` (product floors) | Created if missing, never replaced |
 | Record | `.sdd/install.json`: framework version, commit, clients, and installed files | Updated |
 
 On Windows, run the `git add --chmod=+x` command it prints so the entrypoints and the
@@ -129,24 +129,31 @@ Changing `.sdd/verification.json` is itself an L3 change under the default risk 
 because it changes what produces evidence. This includes adding the first product
 check.
 
-### 7. Adjust the risk rules to your layout
+### 7. Map the risk rules to your layout
 
-`.sdd/risk-rules.json` raises the minimum level for paths that usually carry L3 risk:
-public contracts, `auth`/`permissions` directories, migrations, workflows, deployment,
-and the framework's own controls. They are generic patterns. Once the code layout
-exists, review them:
+Path floors live in two files. `.sdd/risk-rules.json` holds the framework's own floors
+(workflows, CI, verification controls, agent entrypoints) and is replaced by every
+upgrade; do not edit it. `.sdd/product-risk-rules.json` holds your floors and is never
+replaced. It starts with generic patterns for public contracts, `auth`/`permissions`
+directories, migrations, and deployment.
+
+The plan of the first change that creates product code maps them to the real layout,
+in that same change:
 
 - Add the real locations of your contracts, schemas, migrations, and security code.
 - Remove patterns that cannot occur in your project only if you are sure; extra
   patterns cost little.
-- Check the floors themselves. The template is conservative: for example, it raises
+- Check the floors themselves. The starter is conservative: for example, it raises
   every change under `migrations/` to L3, while `AGENTS.md` makes a migration L3 only
   when it carries material risk. If most of your migrations are additive, you may
   lower that floor to L2 and keep classifying risky migrations as L3 by judgment.
   The [worked example](example/README.md#adoption-decisions) does exactly that.
+- If the generic patterns already fit, say so in one line of that plan.
 
-The rules can only raise a floor. A path that matches nothing is not proven low risk.
-See [risk floors](../development/automation.md#risk-floors-and-git-scope).
+Both files use the same format; rule IDs must be unique across them. The rules can
+only raise a floor, and a path that matches nothing is not proven low risk. Editing
+either file is an L3 change. See
+[risk floors](../development/automation.md#risk-floors-and-git-scope).
 
 ### 8. Activate the CI gate (optional)
 

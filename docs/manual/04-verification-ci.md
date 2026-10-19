@@ -114,7 +114,8 @@ python3 scripts/verify standard --base main --level L2 --change CHG-001-book-res
 
 Before executing anything, the runner does a change check against that base. It lists
 every changed path (committed, staged, unstaged, and untracked), applies the
-[risk rules](../../.sdd/risk-rules.json), and refuses to run if the declared level is
+risk rules ([framework](../../.sdd/risk-rules.json) and
+[product](../../.sdd/product-risk-rules.json) floors), and refuses to run if the declared level is
 below the floor:
 
 ```text

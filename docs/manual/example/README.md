@@ -29,8 +29,8 @@ An excerpt from the product documents they maintain:
 
 ## Adoption decisions
 
-When the team adopted the framework, they reviewed `.sdd/risk-rules.json` against their
-layout (an L3 change of its own, reviewed by a volunteer developer from another
+When the team adopted the framework, they reviewed the product risk rules (`.sdd/product-risk-rules.json`
+in 2.0.0) against their layout (an L3 change of its own, reviewed by a volunteer developer from another
 library). One decision matters for this example: the template's `persistent-data` rule
 raises every change under `migrations/` to L3. `AGENTS.md` makes a migration L3 only
 when it carries material risk, so the team lowered that floor to L2. A migration now

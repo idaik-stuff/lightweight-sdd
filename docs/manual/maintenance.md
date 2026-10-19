@@ -27,7 +27,10 @@ python3 ../lightweight-sdd/scripts/install --target . --dry-run
 python3 ../lightweight-sdd/scripts/install --target .
 ```
 
-Run it on a clean change branch of the product. It replaces only framework-owned files,
+Run it on a clean change branch of the product. It replaces only framework-owned files
+(including `.sdd/risk-rules.json` and `.sdd/ci.json`; keep your floors in
+`.sdd/product-risk-rules.json`, moved in the same pull request as the upgrade, and the installer
+refuses an upgrade that would drop one),
 keeps the clients recorded in `.sdd/install.json` unless you pass `--clients`, creates
 product files that are missing, and lists files it no longer ships as orphans. Then:
 
@@ -40,7 +43,8 @@ product files that are missing, and lists files it no longer ships as orphans. T
 
 A repository adopted from 1.0.0 (template or manual copy) has no `.sdd/install.json`.
 The installer refuses it until it is migrated: move any rules added to `AGENTS.md` into
-`docs/project-rules.md`, remove the `adapters` and `adapter-tests` checks from
+`docs/project-rules.md`, move product floors from `.sdd/risk-rules.json` into
+`.sdd/product-risk-rules.json`, remove the `adapters` and `adapter-tests` checks from
 `.sdd/verification.json`, delete `.agents/tools/` and `.agents/adapters/`, commit, and run
 the installer with `--clients`. Its orphan list then names every file in the directories
 of clients you did not choose (for example `.github/agents/` or `CLAUDE.md`), including
@@ -83,7 +87,7 @@ when CI is active, by the CODEOWNERS block; changes go through the L3 route.
 | Shared workflow detail | `.agents/references/` | Rerun the affected scenarios. |
 | Skill names, descriptions, reviewer tools | `.agents/adapters/clients.json` | Regenerate; update tests if the generator's expectations change. |
 | The review procedure | `.agents/review/independent-review.md` | Rerun compatibility trials C09–C12. |
-| Risk floors | `.sdd/risk-rules.json` | Run `check-change-level` on a few representative changes. |
+| Risk floors | `.sdd/risk-rules.json` (framework), `.sdd/product-risk-rules.json` (starter product floors) | Run `check-change-level` on a few representative changes. |
 | Check registry | `.sdd/verification.json` and `docs/development/commands.md` | Run each changed scope once. |
 | CI routing | `.sdd/ci.json` | Run the automation tests; observe a real PR. |
 | Permanent agent rules | `AGENTS.md` | Keep it short; rerun compatibility trial C01. |

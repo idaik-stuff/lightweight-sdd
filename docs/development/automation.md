@@ -116,11 +116,17 @@ such as missing product configuration can instead leave it `blocked`.
 
 ## Risk floors and Git scope
 
-[`.sdd/risk-rules.json`](../../.sdd/risk-rules.json) supplies conservative starter path
-rules for public contracts, permission boundaries, migrations, delivery configuration,
-and verification controls. Each rule has an ID, a minimum level, path patterns, and a
-reason. Adjust these patterns to the actual repository during adoption; they are not
-an exhaustive catalog of its risks. Editing verification controls is intentionally
+Path floors come from two files with the same format.
+[`.sdd/risk-rules.json`](../../.sdd/risk-rules.json) holds the framework's floors for
+delivery configuration, verification controls, CI governance, and agent integration;
+it is framework-owned and replaced by upgrades.
+[`.sdd/product-risk-rules.json`](../../.sdd/product-risk-rules.json) holds the product's
+floors, starting with conservative patterns for public contracts, permission
+boundaries, migrations, and production delivery; it is never replaced. The loader
+requires the framework file, reads the product file when present, and rejects a rule ID
+that appears in both. Each rule has an ID, a minimum level, path patterns, and a reason.
+Map the product patterns to the actual repository in the first change that creates
+product code; they are not an exhaustive catalog of its risks. Editing verification controls is intentionally
 review-sensitive in the starter.
 
 ```bash

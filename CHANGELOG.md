@@ -11,6 +11,17 @@ Targets 2.0.0.
 
 ### Changed
 
+- **Breaking:** path floors are split by owner. `.sdd/risk-rules.json` holds only the
+  framework's floors and, like `.sdd/ci.json`, is framework-owned and replaced by
+  upgrades; the generic product floors move unchanged to the product-owned
+  `.sdd/product-risk-rules.json`, which upgrades never replace. The loader reads both and
+  rejects duplicate IDs. Before upgrading, move product rules, and any patterns you added
+  to framework rules, out of `.sdd/risk-rules.json` into `.sdd/product-risk-rules.json`;
+  do it in the same pull request as the upgrade, so no floor is unenforced in between;
+  the installer refuses an upgrade that would drop a floor or reuse a shipped rule ID.
+  Upgrades also replace `.sdd/ci.json`: local edits to its scopes or framework paths are
+  discarded (project governance paths are planned separately). The plan of the first
+  change that creates product code maps the real paths.
 - **Breaking:** adoption is through the installer only; "Use this template" is no longer a
   supported path. Product commands stay in the product README "Commands" section, and
   `AGENTS.md` points to both registries. `check-ci-setup` requires CODEOWNERS rows for

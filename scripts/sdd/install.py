@@ -10,7 +10,7 @@ import re
 import sys
 import tempfile
 
-from .changes import branch_guard, matches
+from .changes import LEVELS, branch_guard, matches
 from .common import ConfigError, git, git_root, relative_path
 
 SOURCE = Path(__file__).resolve().parents[2]
@@ -23,7 +23,12 @@ FRAMEWORK = (
     ".github/workflows/sdd.yml", ".github/workflows/sdd-direct-push.yml",
     ".github/pull_request_template.md", ".github/sdd-ruleset.template.json",
     "scripts/**", "docs/development/**", "docs/templates/**", "docs/README.md", "docs/specs/README.md",
+    ".sdd/ci.json",
 )
+# Generated framework-owned files: the framework rules without framework-repository-only paths.
+FRAMEWORK_RULES = ".sdd/risk-rules.json"
+PRODUCT_RULES = ".sdd/product-risk-rules.json"
+FRAMEWORK_ONLY = (".agents/tools/**", ".agents/adapters/**")
 # The installer needs a framework checkout, so it and its tests are never shipped.
 EXCLUDED = ("scripts/install", "scripts/sdd/install.py", "scripts/tests/test_install.py")
 CLIENT_FILES = {
@@ -35,7 +40,7 @@ CLIENT_FILES = {
 # Product-owned: created when missing (install or upgrade), never replaced.
 PRODUCT = ("docs/product/brief.md", "docs/product/mvp.md", "docs/product/prd.md",
            "docs/architecture/overview.md", "docs/adr/README.md", "docs/project-rules.md",
-           ".sdd/ci.json", ".sdd/risk-rules.json")
+           PRODUCT_RULES)
 GENERATOR_CHECKS = {"adapters", "adapter-tests"}
 REQUIRED_LINES = {".gitignore": (".sdd/results/",), ".gitattributes": ("* text=auto eol=lf",)}
 CODEOWNERS_EXAMPLE = ".github/CODEOWNERS.example"
@@ -54,7 +59,11 @@ Framework commands: [docs/development/commands.md](docs/development/commands.md)
 | TBD | TBD | Register real product checks in `.sdd/verification.json` too. |
 """
 MIGRATION = ("This looks like a framework 1.0.0 repository. Migrate it first, in a change branch: "
-             "move any rules you added to AGENTS.md into docs/project-rules.md; remove the 'adapters' and "
+             "move any rules you added to AGENTS.md into docs/project-rules.md; move the product rules "
+             "(public-contract, security-boundary, persistent-data, production-delivery, and any of your own) "
+             "from .sdd/risk-rules.json into .sdd/product-risk-rules.json, with any patterns you added to the "
+             "framework rules (in the same pull request as the upgrade, so no floor is unenforced in between); "
+             "note that .sdd/ci.json will be replaced; remove the 'adapters' and "
              "'adapter-tests' checks from .sdd/verification.json; delete .agents/tools/ and "
              ".agents/adapters/; commit; then run the installer with --clients")
 
@@ -184,6 +193,60 @@ def product_verification(source: Path) -> bytes:
     return text(json.dumps(data, indent=2) + "\n")
 
 
+RULES_MIGRATION = ("Upgrading would drop floors kept in .sdd/risk-rules.json, which this version "
+                   "replaces: {}. In the same change branch and pull request as this upgrade, move these rules or "
+                   "patterns into .sdd/product-risk-rules.json (same format, unique IDs); if they came from an "
+                   "older framework version, delete them. Commit, then run the installer again")
+RULES_COLLISION = ("This framework version ships rule IDs that .sdd/product-risk-rules.json also uses: {}. "
+                   "Rename those product rules, commit, then run the installer again")
+
+
+def framework_rules(source: Path) -> bytes:
+    data = json.loads((source / FRAMEWORK_RULES).read_text(encoding="utf-8"))
+    rules = []
+    for rule in data["rules"]:
+        paths = [p for p in rule["paths"] if p not in FRAMEWORK_ONLY]
+        if paths:
+            rules.append({**rule, "paths": paths})
+    return text(json.dumps({**data, "rules": rules}, indent=2) + "\n")
+
+
+def present(target: Path, path: str) -> bool:
+    return (target / path).exists() or (target / path).is_symlink()
+
+
+def rules_guard(target: Path, shipped_rules: bytes) -> None:
+    """Refuse an upgrade that would lose a floor or create a duplicate rule ID.
+
+    Every rule or pattern in the target's framework file must still be shipped, or be kept
+    by the product file; framework-repository-only patterns are ignored.
+    """
+    shipped = {r["id"]: r for r in json.loads(shipped_rules)["rules"]}
+    product = read_json(target, PRODUCT_RULES)["rules"] if present(target, PRODUCT_RULES) else []
+    product_ids = {r["id"] for r in product}
+    collisions = sorted(product_ids & set(shipped))
+    if collisions:
+        raise ConfigError(RULES_COLLISION.format(", ".join(collisions)))
+    if not present(target, FRAMEWORK_RULES):
+        return
+    problems = []
+    kept = {r["id"]: r for r in product}
+    for rule in read_json(target, FRAMEWORK_RULES)["rules"]:
+        ident = rule["id"]
+        # A rule is kept by the shipped framework rule, or else by the product rule with its ID.
+        keeper = shipped.get(ident) or kept.get(ident)
+        if keeper is None:
+            problems.append(f"rule {ident}")
+            continue
+        extra = sorted(set(rule["paths"]) - set(keeper["paths"]) - set(FRAMEWORK_ONLY))
+        if extra:
+            problems.append(f"{ident} patterns {', '.join(extra)}")
+        if LEVELS[rule["minimum_level"]] > LEVELS[keeper["minimum_level"]]:
+            problems.append(f"{ident} floor {rule['minimum_level']}")
+    if problems:
+        raise ConfigError(RULES_MIGRATION.format("; ".join(problems)))
+
+
 def codeowners_example(source: Path, clients: list[str]) -> bytes:
     lines = (source / CODEOWNERS_EXAMPLE).read_text(encoding="utf-8").splitlines()
     keep = [line for line in lines if not line.split() or line.split()[0] not in CLIENT_ROWS
@@ -208,6 +271,9 @@ def plan(source: Path, target: Path, clients: list[str] | None, dirty: bool) -> 
     for client in clients:
         shipped.update({p: (source / p).read_bytes() for p in selected(files, CLIENT_FILES[client])})
     shipped[CODEOWNERS_EXAMPLE] = codeowners_example(source, clients)
+    shipped[FRAMEWORK_RULES] = framework_rules(source)
+    if upgrade:
+        rules_guard(target, shipped[FRAMEWORK_RULES])
     modes = executable_paths(source)
     product = {p: (source / p).read_bytes() for p in PRODUCT}
     product[".sdd/verification.json"] = product_verification(source)
