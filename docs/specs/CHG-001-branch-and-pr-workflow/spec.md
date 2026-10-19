@@ -1,6 +1,6 @@
 # Spec: CHG-001-branch-and-pr-workflow | Branch and pull request for every change
 
-Status: `approved` | Level: `L3` | Level rationale: changes the framework's own enforcement contract (`ci-governance`: `AGENTS.md`, `.github/**`; `verification-controls`: `scripts/check-change-level`, `scripts/verify`, `scripts/sdd/**`; `agent-integration-controls`: `.agents/workflows/**`). A faulty check could block legitimate work or pass silently.
+Status: `implemented` | Level: `L3` | Level rationale: changes the framework's own enforcement contract (`ci-governance`: `AGENTS.md`, `.github/**`; `verification-controls`: `scripts/check-change-level`, `scripts/verify`, `scripts/sdd/**`; `agent-integration-controls`: `.agents/workflows/**`). A faulty check could block legitimate work or pass silently.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: first of the SDD Lite 2.0 rollout; CHG-002 (gates on behavior) and CHG-003 (levels) build on it.
 
