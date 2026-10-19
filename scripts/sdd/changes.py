@@ -19,25 +19,42 @@ def matches(path: str, pattern: str) -> bool:
     return fnmatch.fnmatchcase(path, pattern) or (pattern.startswith("**/") and fnmatch.fnmatchcase(path, pattern[3:]))
 
 
-def load_rules(root: Path) -> list[dict]:
-    data = load_json(inside(root, ".sdd/risk-rules.json"))
+FRAMEWORK_RULES = ".sdd/risk-rules.json"
+PRODUCT_RULES = ".sdd/product-risk-rules.json"
+
+
+def validate_rules(data: dict, source: str) -> list[dict]:
     require_keys(data, {"version", "rules"})
     if type(data["version"]) is not int or data["version"] != 1 or not isinstance(data["rules"], list):
-        raise ConfigError("Unsupported risk rules format")
+        raise ConfigError(f"{source}: unsupported risk rules format")
     ids: set[str] = set()
     for rule in data["rules"]:
         require_keys(rule, {"id", "minimum_level", "paths", "reason"})
         if not isinstance(rule["id"], str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", rule["id"]) or rule["id"] in ids:
-            raise ConfigError("Risk rule IDs must be unique lowercase names")
+            raise ConfigError(f"{source}: risk rule IDs must be unique lowercase names")
         ids.add(rule["id"])
         if not isinstance(rule["minimum_level"], str) or rule["minimum_level"] not in LEVELS or not isinstance(rule["reason"], str) or not rule["reason"].strip():
-            raise ConfigError("Invalid risk floor or reason")
+            raise ConfigError(f"{source}: invalid risk floor or reason")
         if not isinstance(rule["paths"], list) or not rule["paths"]:
-            raise ConfigError("Risk rules need at least one path pattern")
+            raise ConfigError(f"{source}: risk rules need at least one path pattern")
         for pattern in rule["paths"]:
             if not isinstance(pattern, str) or not pattern or pattern.startswith("/") or ".." in pattern.split("/") or "\\" in pattern or "\x00" in pattern:
-                raise ConfigError("Invalid risk path pattern")
+                raise ConfigError(f"{source}: invalid risk path pattern")
     return data["rules"]
+
+
+def load_rules(root: Path) -> list[dict]:
+    """Framework floors (required) plus the product's own floors (optional), with unique IDs."""
+    rules = validate_rules(load_json(inside(root, FRAMEWORK_RULES)), FRAMEWORK_RULES)
+    product = inside(root, PRODUCT_RULES)
+    # A dangling symlink must fail closed, not silently drop the product floors.
+    if product.exists() or product.is_symlink():
+        rules = rules + validate_rules(load_json(product), PRODUCT_RULES)
+    ids = [rule["id"] for rule in rules]
+    if len(set(ids)) != len(ids):
+        raise ConfigError("Risk rule IDs must be unique lowercase names across "
+                          f"{FRAMEWORK_RULES} and {PRODUCT_RULES}")
+    return rules
 
 
 def changed_paths(root: Path, base: str) -> tuple[list[str], str]:
@@ -134,7 +151,7 @@ def assess(root: Path, base: str, declared: str, change: str | None = None, scop
             "branch": branch, "default_branch": default,
             "matches": matches_found, "errors": errors,
             "reason": "No changes relative to the explicit base" if not paths else None,
-            "readiness": "not-assessed", "policy_source": "external trusted policy" if policy_root else "working-tree .sdd/risk-rules.json",
+            "readiness": "not-assessed", "policy_source": "external trusted policy" if policy_root else f"working-tree {FRAMEWORK_RULES} and {PRODUCT_RULES}",
             "limitations": ["Path heuristics only; no match does not prove low risk",
                             "Rules and scripts are locally editable, not a trusted enforcement boundary",
                             "Artifact structure does not prove authorization, semantic coverage, or independent review"]}

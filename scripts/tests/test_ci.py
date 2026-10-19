@@ -88,6 +88,16 @@ class PolicyTests(Fixture):
         event, merge = self.finish(level,change)
         return assess_ci(self.trusted,self.root,event,merge)
 
+    def test_candidate_cannot_remove_base_product_floor(self):
+        self.write('.sdd/product-risk-rules.json', json.dumps({'version': 1, 'rules': [
+            {'id': 'billing', 'minimum_level': 'L3', 'paths': ['billing/**'], 'reason': 'Money'}]}))
+        self.start()
+        self.write('.sdd/product-risk-rules.json', json.dumps({'version': 1, 'rules': []}))
+        self.write('billing/invoice.py', 'x\n')
+        r = self.assess('L1')
+        self.assertEqual((r['detected_floor'], r['status']), ('L3', 'failed'))
+        self.assertIn('billing', [m['id'] for m in r['matches']])
+
     def test_doc_typo_runs_standard_in_ci(self):
         # Shipped policy: CI never runs below standard for L0-L2, even when local L0 is focused.
         self.start(); self.write('README.md','# Changed\n')

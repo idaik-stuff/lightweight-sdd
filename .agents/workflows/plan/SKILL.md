@@ -29,6 +29,8 @@ Edit the active plan and, only when justified, its proposed ADR or design detail
 5. Apply [risk checks](../../references/risk-checks.md) only to relevant risks. For
    L3, explicitly address applicable compatibility, data, security, failures,
    observability, rollout, and feasible recovery. Explain meaningful non-applicability.
+   For the first change that creates product code, map the real paths in
+   `.sdd/product-risk-rules.json`, or state in one line why the generic patterns suffice.
 6. If a durable decision warrants an ADR, use the
    [ADR template](../../../docs/templates/adr.md); keep it proposed until accepted.
    Do not generate ADRs merely because the level is L3. Keep strategy in the plan.

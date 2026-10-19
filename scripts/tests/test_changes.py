@@ -137,6 +137,68 @@ class ChangeTests(Fixture):
     def test_shipped_rules_are_valid(self):
         self.assertGreater(len(load_rules(ROOT)), 0)
 
+    def test_shipped_rules_are_split_by_owner(self):
+        framework = json.loads((ROOT / ".sdd/risk-rules.json").read_text())["rules"]
+        self.assertEqual([r["id"] for r in framework],
+                         ["delivery-policy", "verification-controls", "ci-governance", "agent-integration-controls"])
+        product = ROOT / ".sdd/product-risk-rules.json"
+        if product.exists():  # A product may have replaced the starter rules with its own.
+            self.assertEqual(len(load_rules(ROOT)), len(framework) + len(json.loads(product.read_text())["rules"]))
+        if (ROOT / ".agents/tools").is_dir():  # Framework repository: pin the starter product rules.
+            starter = json.loads(product.read_text())["rules"]
+            self.assertEqual([(r["id"], r["minimum_level"]) for r in starter],
+                             [("public-contract", "L3"), ("security-boundary", "L3"),
+                              ("persistent-data", "L3"), ("production-delivery", "L3")])
+            self.assertIn("**/migrations/**", starter[2]["paths"])
+            self.assertIn("**/openapi*.json", starter[0]["paths"])
+
+    def product_rules(self, rules):
+        self.write(".sdd/product-risk-rules.json", json.dumps({"version": 1, "rules": rules}))
+
+    def test_product_rules_add_floors(self):
+        self.product_rules([{"id": "billing", "minimum_level": "L3", "paths": ["billing/**"], "reason": "Money"}])
+        base = self.init_git()
+        self.write("billing/invoice.py", "x")
+        report = assess(self.root, base, "L1")
+        self.assertEqual((report["detected_floor"], report["status"]), ("L3", "failed"))
+        self.assertEqual({r["id"] for r in load_rules(self.root)}, {"api", "billing"})
+
+    def test_framework_rules_alone_without_product_file(self):
+        self.assertEqual([r["id"] for r in load_rules(self.root)], ["api"])
+
+    def test_duplicate_id_across_files_rejected(self):
+        self.product_rules([{"id": "api", "minimum_level": "L3", "paths": ["other/**"], "reason": "Again"}])
+        with self.assertRaisesRegex(ConfigError, "across"):
+            load_rules(self.root)
+
+    def test_duplicate_inside_product_file_names_the_file(self):
+        rule = {"id": "billing", "minimum_level": "L3", "paths": ["billing/**"], "reason": "Money"}
+        self.product_rules([rule, rule])
+        with self.assertRaisesRegex(ConfigError, "product-risk-rules.json: risk rule IDs"):
+            load_rules(self.root)
+
+    def test_dangling_product_rules_link_fails_closed(self):
+        try:
+            os.symlink("missing.json", self.root / ".sdd/product-risk-rules.json")
+        except (OSError, NotImplementedError):
+            self.skipTest("Symlinks are not available")
+        with self.assertRaises(ConfigError):
+            load_rules(self.root)
+
+    def test_change_to_product_rules_file_requires_l3(self):
+        for name in (".sdd/risk-rules.json", ".sdd/product-risk-rules.json"):
+            self.write(name, (ROOT / name).read_text())
+        base = self.init_git()
+        self.product_rules([])
+        report = assess(self.root, base, "L2")
+        self.assertEqual(report["detected_floor"], "L3")
+        self.assertIn("verification-controls", [m["rule"] for m in report["matches"]])
+
+    def test_invalid_product_rules_name_the_file(self):
+        self.product_rules([{"id": "bad", "minimum_level": "L9", "paths": ["x/**"], "reason": "Bad"}])
+        with self.assertRaisesRegex(ConfigError, "product-risk-rules.json"):
+            load_rules(self.root)
+
     def test_invalid_minimum_level_type_rejected_cleanly(self):
         data = json.loads((self.root / ".sdd/risk-rules.json").read_text())
         data["rules"][0]["minimum_level"] = []

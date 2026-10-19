@@ -217,6 +217,7 @@ class InstallTests(Fixture):
         self.write("AGENTS.md", "# Rules\n\nOur own rule.\n")
         self.commit("1.0.0 layout")
         self.assertEqual(self.assert_refused()["reason"], MIGRATION)
+        self.assertIn("product-risk-rules.json", MIGRATION)
 
     def test_migrated_1_0_target_upgrades_and_gains_missing_stubs(self):
         self.write("scripts/sdd/__init__.py", "")
@@ -297,6 +298,107 @@ class InstallTests(Fixture):
         self.assertEqual(self.assert_refused()["status"], "refused")
         self.write(".sdd/install.json", json.dumps({"clients": [1]})); self.commit("bad record")
         self.assertEqual(self.assert_refused(None)["status"], "refused")
+
+    def test_rules_and_ci_policy_ownership(self):
+        self.assertEqual(self.install()[0], 0)
+        rules = json.loads((self.root / ".sdd/risk-rules.json").read_text())["rules"]
+        patterns = [p for rule in rules for p in rule["paths"]]
+        self.assertNotIn(".agents/tools/**", patterns)
+        self.assertNotIn(".agents/adapters/**", patterns)
+        self.assertIn(".sdd/product-risk-rules.json", patterns)
+        self.assertEqual((self.root / ".sdd/ci.json").read_bytes(), (ROOT / ".sdd/ci.json").read_bytes())
+        self.assertEqual((self.root / ".sdd/product-risk-rules.json").read_bytes(),
+                         (ROOT / ".sdd/product-risk-rules.json").read_bytes())
+        record = json.loads((self.root / ".sdd/install.json").read_text())
+        self.assertIn(".sdd/risk-rules.json", record["files"])
+        self.assertNotIn(".sdd/product-risk-rules.json", record["files"])
+
+    def test_upgrade_replaces_framework_policy_and_keeps_product_rules(self):
+        self.assertEqual(self.install()[0], 0)
+        self.commit()
+        own = json.dumps({"version": 1, "rules": [
+            {"id": "billing", "minimum_level": "L3", "paths": ["billing/**"], "reason": "Money"}]})
+        self.write(".sdd/product-risk-rules.json", own)
+        self.write(".sdd/risk-rules.json", json.dumps({"version": 1, "rules": []}))
+        self.write(".sdd/ci.json", "{}")
+        self.commit("local policy edits")
+        code, report = self.install(None)
+        self.assertEqual(code, 0)
+        self.assertEqual((self.root / ".sdd/product-risk-rules.json").read_text(), own)
+        self.assertEqual((self.root / ".sdd/ci.json").read_bytes(), (ROOT / ".sdd/ci.json").read_bytes())
+        self.assertIn(("replace", ".sdd/risk-rules.json"), report["actions"])
+
+    def test_upgrade_with_product_rules_in_framework_file_is_refused(self):
+        self.assertEqual(self.install()[0], 0)
+        (self.root / ".sdd/product-risk-rules.json").unlink()
+        rules = json.loads((ROOT / ".sdd/product-risk-rules.json").read_text())["rules"]
+        framework = json.loads((self.root / ".sdd/risk-rules.json").read_text())
+        framework["rules"] += rules
+        self.write(".sdd/risk-rules.json", json.dumps(framework))
+        self.commit("pre-split layout")
+        reason = self.assert_refused(None)["reason"]
+        self.assertIn("public-contract", reason)
+        self.assertIn(".sdd/product-risk-rules.json", reason)
+
+    def installed_with_framework_rules(self, mutate=None, product=None):
+        self.assertEqual(self.install()[0], 0)
+        rules = json.loads((self.root / ".sdd/risk-rules.json").read_text())
+        if mutate:
+            mutate(rules["rules"])
+        self.write(".sdd/risk-rules.json", json.dumps(rules))
+        if product is not None:
+            self.write(".sdd/product-risk-rules.json", json.dumps({"version": 1, "rules": product}))
+        self.commit("edited policy")
+
+    def test_upgrade_refuses_patterns_added_to_framework_rules(self):
+        def add(rules):
+            next(r for r in rules if r["id"] == "delivery-policy")["paths"].append("Jenkinsfile")
+        self.installed_with_framework_rules(add)
+        reason = self.assert_refused(None)["reason"]
+        self.assertIn("delivery-policy patterns Jenkinsfile", reason)
+
+    def test_upgrade_refuses_custom_rule_left_in_framework_file(self):
+        custom = {"id": "billing", "minimum_level": "L3", "paths": ["billing/**"], "reason": "Money"}
+        self.installed_with_framework_rules(lambda rules: rules.append(custom), product=[])
+        self.assertIn("rule billing", self.assert_refused(None)["reason"])
+
+    def test_upgrade_accepts_custom_rule_already_in_product_file(self):
+        custom = {"id": "billing", "minimum_level": "L3", "paths": ["billing/**"], "reason": "Money"}
+        self.installed_with_framework_rules(lambda rules: rules.append(custom), product=[custom])
+        self.assertEqual(self.install(None)[0], 0)
+
+    def test_upgrade_refuses_product_copy_with_fewer_patterns(self):
+        custom = {"id": "billing", "minimum_level": "L3", "paths": ["billing/**", "invoices/**"], "reason": "Money"}
+        partial = {**custom, "paths": ["billing/**"]}
+        self.installed_with_framework_rules(lambda rules: rules.append(custom), product=[partial])
+        self.assertIn("billing patterns invoices/**", self.assert_refused(None)["reason"])
+
+    def test_upgrade_ignores_framework_repository_only_patterns(self):
+        def add(rules):
+            next(r for r in rules if r["id"] == "ci-governance")["paths"].append(".agents/tools/**")
+        self.installed_with_framework_rules(add)
+        self.assertEqual(self.install(None)[0], 0)
+
+    def test_upgrade_refuses_shipped_id_reused_by_product(self):
+        clash = {"id": "delivery-policy", "minimum_level": "L3", "paths": ["deploy/**"], "reason": "Ours"}
+        self.installed_with_framework_rules(product=[clash])
+        self.assertIn("delivery-policy", self.assert_refused(None)["reason"])
+
+    def test_upgrade_with_malformed_framework_rules_is_refused(self):
+        self.assertEqual(self.install()[0], 0)
+        self.write(".sdd/risk-rules.json", "{not json")
+        self.commit("broken rules")
+        self.assertEqual(self.assert_refused(None)["status"], "refused")
+
+    def test_migrated_1_0_target_with_single_rules_file_is_refused(self):
+        self.write("scripts/sdd/__init__.py", "")
+        self.write(".sdd/verification.json", json.dumps({"checks": [{"id": "docs"}]}))
+        self.write("README.md", README)
+        old = json.loads((ROOT / ".sdd/risk-rules.json").read_text())
+        old["rules"] += json.loads((ROOT / ".sdd/product-risk-rules.json").read_text())["rules"]
+        self.write(".sdd/risk-rules.json", json.dumps(old))
+        self.commit("1.0.0 single rules file")
+        self.assertIn("rule public-contract", self.assert_refused()["reason"])
 
     def test_upgrade_reports_dropped_client_files_as_orphans(self):
         self.assertEqual(self.install("claude,cursor")[0], 0)
