@@ -1,4 +1,4 @@
-from support import Fixture
+from support import Fixture, ROOT
 from sdd.common import ConfigError
 from sdd.docs import anchors, check_docs, validate_change
 
@@ -91,6 +91,135 @@ class DocumentationTests(Fixture):
         ident = self.change(spec_state="approved")
         self.replace(f"docs/specs/{ident}/spec.md", "Deterministic result", "TBD")
         self.assertTrue(any("pending placeholders" in error for error in validate_change(self.root, ident)))
+
+    def accepted(self, cell="Deterministic result"):
+        # change() rewrites the same fixture files, so each call starts from a clean record.
+        ident = self.change(spec_state="approved", plan_state="approved")
+        self.replace(f"docs/specs/{ident}/spec.md", "Deterministic result |", f"{cell} |")
+        return ident
+
+    def placeholder_errors(self, ident):
+        return [e for e in validate_change(self.root, ident) if "placeholder" in e or "acceptance" in e or "rationale" in e]
+
+    def test_domain_vocabulary_in_criteria_is_not_a_placeholder(self):
+        for cell in ("The list shows `Changes pending`", "The order shows as pending",
+                     "A pending payment is refunded", "Retry when TODO items remain"):
+            with self.subTest(cell=cell):
+                self.assertEqual(self.placeholder_errors(self.accepted(cell)), [])
+
+    def test_prose_outside_the_criteria_table_is_not_checked(self):
+        ident = self.accepted()
+        self.replace(f"docs/specs/{ident}/spec.md", "## Acceptance and next steps",
+                     "Rows marked pending in the product stay visible.\n\n## Acceptance and next steps")
+        self.assertEqual(self.placeholder_errors(ident), [])
+
+    def test_placeholder_criteria_cells_rejected(self):
+        for cell in ("TBD", "`TBD`", "TODO", "pending", "Pending", "not run", "Not run", "TBD - What is observed",
+                     "TBD – guidance", "tbd", "TBD.", "Pending.", "TBD: what is observed", "TBD?", "(TBD)",
+                     "*TBD*", "**TBD**", "_TBD_", "<TBD>", "`TBD` - guidance", "not  run", "not run",
+                     "- TBD", "\"TBD\""):
+            with self.subTest(cell=cell):
+                errors = self.placeholder_errors(self.accepted(cell))
+                self.assertTrue(any("pending placeholders" in e for e in errors), errors)
+
+    def test_placeholder_in_any_criteria_column_rejected(self):
+        ident = self.change(spec_state="approved")
+        self.replace(f"docs/specs/{ident}/spec.md", "| AC-01 | A fixture | Run |", "| AC-01 | A fixture | `TBD` |")
+        self.assertTrue(any("pending placeholders" in e for e in validate_change(self.root, ident)))
+
+    def test_acceptance_fields_starting_with_placeholder_rejected(self):
+        # Replace the whole backticked value so `TBD` reaches clean(), not the missing-value path.
+        cases = {"spec": ("`Fixture approver / 2026-01-01`", "scope acceptance"),
+                 "plan": ("`Fixture / 2026-01-01`", "technical acceptance")}
+        for name, (old, message) in cases.items():
+            for value in ("pending", "`TBD`", "pending owner review", "TODO: ask the owner", "(pending)",
+                          "*TBD*", "- pending", "_TODO_", '"TBD"'):
+                with self.subTest(file=name, value=value):
+                    ident = self.change(spec_state="approved", plan_state="approved")
+                    self.replace(f"docs/specs/{ident}/{name}.md", old, value)
+                    self.assertTrue(any(message in e for e in validate_change(self.root, ident)))
+
+    def test_concrete_fields_with_later_placeholder_word_pass(self):
+        ident = self.change(spec_state="approved", plan_state="approved")
+        self.replace(f"docs/specs/{ident}/spec.md", "Fixture approver / 2026-01-01",
+                     "Owner, 2026-10-19, after the pending items were resolved")
+        self.replace(f"docs/specs/{ident}/spec.md", "Intentional behavior change", "Changes how pending orders are shown")
+        self.replace(f"docs/specs/{ident}/plan.md", "Fixture / 2026-01-01", "Owner / 2026-10-19, TBD items closed")
+        self.assertEqual(validate_change(self.root, ident), [])
+
+    def test_draft_records_are_not_checked_for_placeholders(self):
+        ident = self.change()
+        self.replace(f"docs/specs/{ident}/spec.md", "Deterministic result |", "TBD |")
+        self.replace(f"docs/specs/{ident}/spec.md", "Fixture approver / 2026-01-01", "pending")
+        self.replace(f"docs/specs/{ident}/plan.md", "Fixture / 2026-01-01", "TBD")
+        self.assertEqual(validate_change(self.root, ident), [])
+
+    def test_targeted_sentences_fail_unless_quoted(self):
+        ident = self.change(spec_state="approved")
+        spec = f"docs/specs/{ident}/spec.md"
+        self.replace(spec, "Related plan: [plan](plan.md).", "Related plan: [plan](plan.md).\nScope acceptance: pending.")
+        self.assertTrue(any("still pending" in e for e in validate_change(self.root, ident)))
+        self.replace(spec, "\nScope acceptance: pending.", "\nThe check rejects `Scope acceptance: pending`.")
+        self.assertEqual(validate_change(self.root, ident), [])
+
+    def test_completed_plan_verified_sentence_fails_unless_quoted(self):
+        ident = self.change(spec_state="implemented", plan_state="completed")
+        plan = f"docs/specs/{ident}/plan.md"
+        self.replace(plan, "Verified version or diff: synthetic fixture only.", "Verified version or diff: pending.")
+        self.assertTrue(any("version/diff" in e for e in validate_change(self.root, ident)))
+        self.replace(plan, "Verified version or diff: pending.",
+                     "Verified version or diff: abc1234. The template line `Verified version or diff: pending` was replaced.")
+        self.assertEqual(validate_change(self.root, ident), [])
+
+    def test_unresolved_result_cells_keep_the_1_0_rule(self):
+        # Unchanged from 1.0.0 on purpose: a stricter rule would fail historical records in every PR.
+        for cell, fails in (("Not run", True), ("blocked", True), ("Failed", True), ("pending", True),
+                            ("`not run`", False), ("Passed (not run on macOS)", False)):
+            with self.subTest(cell=cell):
+                ident = self.change(spec_state="implemented", plan_state="completed")
+                self.replace(f"docs/specs/{ident}/plan.md", "| AC-01 | Passed |", f"| AC-01 | {cell} |")
+                errors = validate_change(self.root, ident)
+                self.assertEqual(any("unresolved result" in e for e in errors), fails, errors)
+
+    def test_exact_state_name_cell_is_a_placeholder(self):
+        # Accepted trade-off: a whole outcome cell of only `pending` reads as a placeholder.
+        for cell in ("pending", "`pending`", "Pending - awaiting payment"):
+            with self.subTest(cell=cell):
+                self.assertTrue(self.placeholder_errors(self.accepted(cell)))
+        self.assertEqual(self.placeholder_errors(self.accepted("The order is `pending`")), [])
+
+    def test_sentence_quoted_in_closed_fence_passes(self):
+        ident = self.change(spec_state="approved")
+        self.replace(f"docs/specs/{ident}/spec.md", "## Acceptance and next steps",
+                     "```text\nScope acceptance: pending.\n```\n\n## Acceptance and next steps")
+        self.assertEqual(validate_change(self.root, ident), [])
+
+    def test_unclosed_fence_does_not_hide_open_sentences(self):
+        ident = self.change(spec_state="approved")
+        self.replace(f"docs/specs/{ident}/spec.md", "## Acceptance and next steps",
+                     "```text\nan example left open\n\n## Acceptance and next steps\n\nScope acceptance: pending.")
+        self.assertTrue(any("still pending" in e for e in validate_change(self.root, ident)))
+
+    def test_rationale_starting_with_placeholder_rejected(self):
+        for value in ("pending migration review", "TBD - why", "*TODO*"):
+            with self.subTest(value=value):
+                ident = self.change()
+                self.replace(f"docs/specs/{ident}/spec.md", "`Intentional behavior change`", value)
+                self.assertTrue(any("rationale" in e for e in validate_change(self.root, ident)))
+
+    def test_unchanged_templates_as_accepted_records_fail(self):
+        ident = "CHG-900-template"
+        expected = {("approved", "approved"): ("Level rationale", "scope acceptance", "pending placeholders",
+                                               "still pending", "technical acceptance"),
+                    ("implemented", "completed"): ("version/diff", "unresolved result")}
+        for (spec_state, plan_state), messages in expected.items():
+            for name, state in (("spec", spec_state), ("plan", plan_state)):
+                text = (ROOT / f"docs/templates/{name}.md").read_text(encoding="utf-8")
+                self.write(f"docs/specs/{ident}/{name}.md", text.replace("Status: `draft`", f"Status: `{state}`"))
+            errors = validate_change(self.root, ident)
+            for message in messages:
+                with self.subTest(state=spec_state, message=message):
+                    self.assertTrue(any(message in e for e in errors), errors)
 
     def test_approved_plan_requires_recorded_acceptance(self):
         ident = self.change(plan_state="approved")

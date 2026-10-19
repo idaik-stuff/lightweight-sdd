@@ -29,12 +29,12 @@ Closed design decision (ideation, 2026-10-19, point E): gates on behavior, not p
 
 Includes:
 
-- Placeholder detection on values: a placeholder is a value that, with surrounding backticks and whitespace removed, is only one of the tokens `TBD`, `TODO`, `pending`, `not run` (any case), optionally followed by a dash and template guidance (`TBD - What problem…`).
+- Placeholder detection on values: a placeholder is a value that, with surrounding whitespace, list dashes, emphasis, quotes, brackets, and backticks removed, is only one of the tokens `TBD`, `TODO`, `pending`, `not run` (any case, any spacing in `not run`), optionally with end punctuation or followed by a dash or colon and template guidance (`TBD - What problem…`, `TBD: …`). See Expected behavior for examples.
 - Where it applies:
   - each cell of the acceptance-criteria table in an accepted spec (`approved`, `implemented`);
   - the fields `Level rationale`, `Scope accepted by / date` (accepted spec), and `Accepted by / date` (accepted plan). Because these fields are records of a decision, a value that starts with a placeholder token (for example `pending owner review`) also fails.
 - Prose in the acceptance-criteria section outside the table, and words inside a sentence or code span, are no longer flagged.
-- The targeted checks listed in Context keep their rules but are evaluated without inline and fenced code, so a document that quotes the template sentence in backticks is not flagged.
+- The two targeted sentence checks (`Scope acceptance: pending`, `Verified version or diff: pending`) are evaluated without inline and fenced code, so a document that quotes the template sentence in backticks is not flagged; when a fence is left unclosed, they read the raw text as in 1.0.0. The completion result-cell check is unchanged from 1.0.0.
 - Guidance, not a check, in `docs/development/methodology.md` (section 8) and `.agents/references/handoffs.md`: L2/L3 evidence rows reference the PR's CI run or the `verify` JSON report with its snapshot, or a defined manual procedure; L1 has no evidence table, its PR CI result is the evidence.
 - Regression and negative tests in `scripts/tests/test_docs.py`.
 - Removal of the root input file `FEEDBACK-pending-placeholder-false-positive.md` once covered.
@@ -53,6 +53,7 @@ Does not include:
 - A Level rationale or acceptance field that is only a placeholder, or starts with one, fails with the existing messages.
 - Draft specs and plans are not checked for placeholders, as today.
 - Every change record already in the repository keeps its current result.
+- Accepted trade-off: an AC cell whose whole content is only a token, or a token followed by a dash or colon (for example `pending` or `Pending - awaiting payment`), counts as a placeholder; a domain state inside an outcome sentence (``The order is `pending` ``) does not. Near-template forms with end punctuation, emphasis, brackets, or quotes (`TBD.`, `*TBD*`, `(pending)`) also count.
 
 ## Acceptance criteria
 
@@ -76,7 +77,7 @@ AC-03, AC-04, AC-06, and AC-09 are the failure boundaries; AC-01, AC-02, AC-05, 
 ## Constraints and compatibility
 
 - Property at risk: no real placeholder may pass. Every placeholder form shipped in `docs/templates/spec.md` and `plan.md` must still fail when left in an accepted record (AC-03, AC-04, AC-06).
-- Consumers: adopters' accepted specs and plans, and `ci.py`, which uses the base's `docs.py`. The change only accepts more documents: a field value that starts with a placeholder token already fails today, so nothing that passes today starts failing.
+- Consumers: adopters' accepted specs and plans, and `ci.py`, which uses the base's `docs.py`. The change accepts more documents, with one deliberate exception: near-template placeholders that 1.0.0 missed now fail (underscore emphasis such as `_TBD_`, and `not run` with irregular spacing). Because `ci.py` checks every change folder, an accepted historical record containing exactly one of these forms would start failing later PRs; it is a real placeholder and must be fixed in that record.
 - Framework automation stays Python 3.10+ standard library only.
 
 ## Uncertainties
@@ -85,7 +86,7 @@ None open. Point 1 (where the value rule applies) and point 2 (evidence referenc
 
 ## Acceptance and next steps
 
-Scope acceptance: accepted by Idaika Iglesias on 2026-10-19 (in conversation), with AC-01 to AC-11, including the rule that acceptance fields starting with a placeholder fail; AC-12 (targeted checks ignore code spans) added and accepted the same day after this spec reproduced the false positive. Next: plan with strategy.
+Scope acceptance: accepted by Idaika Iglesias on 2026-10-19 (in conversation), with AC-01 to AC-11, including the rule that acceptance fields starting with a placeholder fail; AC-12 (targeted checks ignore code spans) added and accepted the same day after this spec reproduced the false positive. Independent review round 1 (same day): the Scope wording on targeted checks was narrowed to the two sentences (result cells unchanged) and the trade-off above was recorded; both accepted by the owner in conversation. Review round 2: the compatibility statement now names the near-template forms that 1.0.0 missed; accepted by the owner the same day in conversation.
 
 Related plan: [plan.md](plan.md). States and completion rules: [docs/specs/README.md](../README.md).
 
