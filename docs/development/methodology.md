@@ -74,7 +74,7 @@ Resolve blocking findings and repeat the affected checks; the evidence must corr
 
 ## 8. Evidence and completion
 
-For L2/L3, `plan.md` contains a summary for each AC: the check, result, and a reproducible reference to the relevant test, artifact, or record. Include the version/diff and environment if they affect interpretation. Do not copy entire logs or sensitive data into the repository.
+For L2/L3, `plan.md` contains a summary for each AC: the check, result, and a reproducible reference to the relevant test, artifact, or record. Include the version/diff and environment if they affect interpretation. Point each row at the PR's CI run, the `scripts/verify` JSON report with its snapshot, or a defined manual procedure; the gate does not check these references, it checks structure. Do not copy entire logs or sensitive data into the repository. L1 has no evidence table: the PR's CI result and its description are the evidence.
 
 For L0/L1, recording the level and rationale, change, checks, and limitations in the PR description is sufficient: it is the change record, and squash merging with the "Pull request title and description" message keeps it in Git. Do not create `verification.md` just for this. Every change, at every level, is made on its own branch and integrated through a pull request; the agent never commits to the default branch and never merges. The agent does not commit or publish anything without authorization, and an authorization to "commit and push" means the change branch.
 

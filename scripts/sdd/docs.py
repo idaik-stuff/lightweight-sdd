@@ -12,12 +12,57 @@ from .common import ConfigError, inside, relative_path
 
 SPEC_STATES = {"draft", "approved", "implemented", "superseded", "cancelled"}
 PLAN_STATES = {"draft", "approved", "in-progress", "completed", "cancelled"}
-PENDING = re.compile(r"\b(TBD|TODO|pending|not run)\b", re.I)
+TOKENS = r"(?:TBD|TODO|pending|not\s+run)"
+WRAPPERS = "`*_\"'()[]<>"
+# A whole value that is only a token, with optional closing wrappers and end punctuation,
+# or followed by template guidance after a dash or colon.
+PLACEHOLDER = re.compile(TOKENS + r"[" + re.escape(WRAPPERS) + r"]*"
+                         r"(?:[.:?!…]*|[.?!…]*\s*[-–—:]\s*.*)", re.I | re.S)
+UNRESOLVED = re.compile(TOKENS + r"\b", re.I)
 FIELD = lambda name: re.compile(r"(?:^|\|)\s*" + re.escape(name) + r":\s*`?([^`|\n]+)", re.M)
+
+
+def clean(value: str) -> str:
+    """Drop whitespace, list dashes, emphasis, quotes, and brackets around a value."""
+    return value.strip().strip(WRAPPERS + " \t ").lstrip("-–—• \t" + WRAPPERS)
+
+
+def placeholder(value: str) -> bool:
+    """A table cell left as a template placeholder; words inside a sentence are not one."""
+    return bool(PLACEHOLDER.fullmatch(clean(value)))
+
+
+def unresolved(value: str | None) -> bool:
+    """A recorded decision that is missing or still starts with a placeholder token."""
+    return not value or bool(UNRESOLVED.match(clean(value)))
+
+
+def ac_cells(section_text: str) -> list[str]:
+    """Cells of acceptance-criteria rows (first cell AC-NN); prose and headers are not cells."""
+    cells: list[str] = []
+    for line in section_text.splitlines():
+        if re.match(r"^\s*\|\s*AC-\d+\s*\|", line):
+            row = line.strip()[1:]
+            row = row[:-1] if row.endswith("|") and not row.endswith("\\|") else row
+            cells.extend(re.split(r"(?<!\\)\|", row))
+    return cells
 
 
 def prose(text: str) -> str:
     """Remove fenced code and inline code, retaining lines for error locations."""
+    return strip_code(text)[0]
+
+
+def sentences(text: str) -> str:
+    """Text for template-sentence checks: code removed, unless a fence is left open.
+
+    An unclosed fence would blank the rest of the document and hide an open sentence.
+    """
+    stripped, closed = strip_code(text)
+    return stripped if closed else text
+
+
+def strip_code(text: str) -> tuple[str, bool]:
     out: list[str] = []
     fence: tuple[str, int] | None = None
     for line in text.splitlines():
@@ -33,7 +78,7 @@ def prose(text: str) -> str:
                 out.append("")
                 continue
         out.append("" if fence else re.sub(r"(`+).*?\1", "", line))
-    return "\n".join(out)
+    return "\n".join(out), fence is None
 
 
 def anchors(text: str) -> set[str]:
@@ -131,7 +176,7 @@ def validate_change(root: Path, identifier: str, require_pair: bool = False) -> 
     if level not in {"L2", "L3"}:
         errors.append(f"{identifier}/spec.md: recorded changes need Level L2 or L3")
     rationale = field(spec, "Level rationale")
-    if not rationale or PENDING.search(rationale):
+    if unresolved(rationale):
         errors.append(f"{identifier}/spec.md: provide a concrete Level rationale")
     ac_section = section(spec, "Acceptance criteria")
     ids = re.findall(r"^\s*\|\s*(AC-\d+)\s*\|", ac_section, re.M)
@@ -141,11 +186,12 @@ def validate_change(root: Path, identifier: str, require_pair: bool = False) -> 
         errors.append(f"{identifier}/spec.md: duplicate acceptance-criterion IDs")
     if state in {"approved", "implemented"}:
         acceptance = field(spec, "Scope accepted by / date")
-        if not acceptance or PENDING.search(acceptance):
+        if unresolved(acceptance):
             errors.append(f"{identifier}/spec.md: accepted state has no recorded scope acceptance")
-        if PENDING.search(ac_section):
+        if any(placeholder(cell) for cell in ac_cells(ac_section)):
             errors.append(f"{identifier}/spec.md: accepted criteria contain pending placeholders")
-        if re.search(r"Scope acceptance:\s*pending", spec, re.I):
+        # Quoting the template sentence in code is documentation, not an open acceptance.
+        if re.search(r"Scope acceptance:\s*pending", sentences(spec), re.I):
             errors.append(f"{identifier}/spec.md: acceptance statement is still pending")
     if plan is None:
         return errors
@@ -154,7 +200,7 @@ def validate_change(root: Path, identifier: str, require_pair: bool = False) -> 
         errors.append(f"{identifier}/plan.md: missing Verification plan and traceability section")
     if plan_state in {"approved", "in-progress", "completed"}:
         acceptance = field(plan, "Accepted by / date")
-        if not acceptance or PENDING.search(acceptance):
+        if unresolved(acceptance):
             errors.append(f"{identifier}/plan.md: accepted state has no recorded technical acceptance")
         for ident in ids:
             if not re.search(r"\b" + re.escape(ident) + r"\b", verified_plan):
@@ -169,7 +215,7 @@ def validate_change(root: Path, identifier: str, require_pair: bool = False) -> 
         errors.append(f"{identifier}: implemented spec requires completed plan")
     if plan_state == "completed":
         evidence = section(plan, "Completion evidence")
-        if not evidence or re.search(r"Verified version or diff:\s*pending", evidence, re.I):
+        if not evidence or re.search(r"Verified version or diff:\s*pending", sentences(evidence), re.I):
             errors.append(f"{identifier}/plan.md: completed state needs a version/diff in Completion evidence")
         for ident in ids:
             if not re.search(r"\b" + re.escape(ident) + r"\b", evidence):

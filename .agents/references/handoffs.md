@@ -34,7 +34,9 @@ Record target version/snapshot, environment, requested and actual scope, then:
 | --- | --- | --- | --- |
 | Actual identifier | Exact command and working directory, or repeatable steps | passed / failed / blocked / not run | Observable result and durable reference when available |
 
-Record required and optional coverage distinctly. Missing required infrastructure is
+For L2/L3, the durable reference is the PR's CI run, the `scripts/verify` JSON report
+name with its source snapshot, or the repeatable manual steps. L1 needs no table: the
+PR's CI result and description are its evidence. Record required and optional coverage distinctly. Missing required infrastructure is
 blocked, not N/A. Optional omissions have a reason. Keep `verification outcome`,
 `independent-review gate`, and `deployment state` separate. A passing test command
 cannot establish all three.

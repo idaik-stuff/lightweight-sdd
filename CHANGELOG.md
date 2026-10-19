@@ -21,6 +21,16 @@ Targets 2.0.0.
 - `AGENTS.md`, the `implement` and `verify` workflows, the handoff contract, and the PR
   template require one branch and one pull request per change at every level; the agent
   never merges. The L0/L1 change record is the PR description, kept in Git by squash merge.
+- `scripts/check-docs` flags placeholders by value, not by word: an acceptance-criteria
+  cell that is only `TBD`, `TODO`, `pending`, or `not run` (with optional emphasis, brackets,
+  end punctuation, or dash/colon guidance), and a rationale or acceptance field that is empty
+  or starts with one. Domain vocabulary such as `Changes pending` and prose outside the
+  criteria table no longer fail; a cell that is only a state name such as `pending` still
+  counts as a placeholder, and `_TBD_` or `not  run`, which 1.0.0 missed, now fail. The template sentences `Scope acceptance: pending` and
+  `Verified version or diff: pending` are ignored when quoted in code. Result cells are
+  unchanged.
+- The methodology and handoff contract say what evidence rows point to: the PR's CI run,
+  the `verify` JSON report with its snapshot, or a manual procedure (guidance, not a check).
 - The README Quick start documents the bootstrap order and makes opening the first change
   as a pull request an explicit step.
 
