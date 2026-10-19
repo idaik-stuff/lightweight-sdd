@@ -1,6 +1,6 @@
 # Spec: CHG-006-risk-rules | Framework and product risk rules, and path mapping
 
-Status: `approved` | Level: `L3` | Level rationale: changes how path floors are loaded and which file owns each rule (`verification-controls`), and what upgrades deliver to products; a mistake could drop a floor or keep products on stale framework rules.
+Status: `implemented` | Level: `L3` | Level rationale: changes how path floors are loaded and which file owns each rule (`verification-controls`), and what upgrades deliver to products; a mistake could drop a floor or keep products on stale framework rules.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: sixth of the SDD Lite 2.0 rollout; builds on [CHG-005](../CHG-005-installer/spec.md) (installer and file ownership). CHG-007 (CI runtimes, `--target auto`, project governance paths) follows.
 
