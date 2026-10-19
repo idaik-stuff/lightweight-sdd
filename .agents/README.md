@@ -10,12 +10,12 @@ structures. Adapters translate invocation and reviewer configuration, not produc
 | --- | --- | --- |
 | `workflows/<phase>/SKILL.md` | Canonical two-field metadata and procedure. | The selected phase needs it. |
 | `workflows/<phase>/agents/openai.yaml` | Canonical display text. | Generating UI metadata. |
-| [Client mapping](adapters/clients.json) | Five names, manual implementation policy, reviewer identity. | Generating or checking adapters. |
+| `adapters/clients.json` | Five names, manual implementation policy, reviewer identity. Framework repository only. | Generating or checking adapters. |
 | `skills/sdd-*/` | Generated shared discovery entrypoints and Codex metadata. | Discovered by a qualified client. |
 | [Handoffs](references/handoffs.md) | Compact continuation/evidence format. | Handoff or resumption. |
 | [Risk checks](references/risk-checks.md) | Conditional risk questions. | The risk applies. |
 | [Review contract](review/independent-review.md) | Common reviewer procedure. | Preparing or conducting separate review. |
-| `tools/` | Deterministic generation and static compatibility tests. | Maintenance or verification. |
+| `tools/` | Deterministic generation and static compatibility tests. Framework repository only. | Maintenance or verification. |
 | [Behavior scenarios](evals/scenarios.md) | Original workflow trial cases. | Live evaluation, not assumed passed. |
 | [Compatibility trials](evals/compatibility.md) | Cross-client discovery and control checks. | Qualifying an installed client. |
 
@@ -32,7 +32,7 @@ Claude Code uses `.claude/skills/`. Each supported client has a native reviewer
 configuration. The [compatibility guide](../docs/development/agent-compatibility.md)
 explains overlapping discovery, effective restrictions, and unqualified surfaces.
 
-Regenerate/check using the root README. The generator validates all input and target
+In the framework repository, regenerate/check with the root README's maintenance commands. The generator validates all input and target
 paths before writing, rejects symlinks and unowned files, and refuses reserved-name
 collisions. It never deletes files, grants global permissions,
 installs clients, edits user settings, or claims live behavior. Individual replacement
@@ -52,7 +52,9 @@ limitations; keep the L3 gate pending when the required review cannot be perform
 
 ## Distribution
 
-Install the complete repository. Canonical individual `skill.zip` bundles depend on
+Install with `scripts/install` from a framework checkout: a product receives the canonical
+workflows, the review contract, and the generated entrypoints of its chosen clients, not
+the generator. Canonical individual `skill.zip` bundles depend on
 shared templates, references, and repository context; they are not hosted-chat installs.
 Use generated entrypoints, not source bundles, for automatic discovery in this release.
 Local automation stays in `scripts/` and `.sdd/`; CI activation remains a separate

@@ -1,6 +1,6 @@
 # Development methodology
 
-Framework version: `1.0.0` | Adoption owner: `TBD`.
+Framework version: `1.0.0` | Adoption owner: recorded in [project rules](../project-rules.md).
 
 This document expands on [AGENTS.md](../../AGENTS.md). Classification and routes are defined only there. Agent Skills implement these procedures; see [workflow usage](workflows.md). [Local automation](automation.md) runs the configured checks, and the optional [CI adapter](ci-enforcement.md) adds the server-side team review requirements described below.
 

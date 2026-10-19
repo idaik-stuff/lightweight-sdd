@@ -26,7 +26,8 @@ reading this file directly. Read `AGENTS.md` and applicable local instructions.
 3. For an accepted L2/L3 plan, mark execution in progress. Implement one bounded step
    at a time using existing patterns. Add or update tests alongside behavior; for a
    bug, demonstrate pre-fix failure and post-fix success when safely feasible.
-4. Run available focused checks during implementation from the README registry.
+4. Run available focused checks during implementation from the command registry
+   (`docs/development/commands.md`, README product commands).
    Inspect commands for side effects and use a safe local environment. Preserve
    evidence of failures instead of repeatedly retrying without a changed hypothesis.
 5. Record minor approach deviations in the plan. Stop the affected work when scope,

@@ -16,7 +16,9 @@ Each concept has one canonical source. Other documents reference it rather than 
 | [Workflow usage](development/workflows.md) | Agent commands, installation, upgrade, and usage. | When the workflow interface changes. | Team owner. |
 | [Automation](development/automation.md) | Local commands, machine configuration, evidence, and limits. | When automation behavior changes. | Framework maintainer. |
 | [CI enforcement](development/ci-enforcement.md) | Base-policy CI, ownership, activation, and operational limits. | When the adapter or platform governance changes. | Framework maintainer and independent owners. |
-| [Manual](manual/README.md) | Explanatory guide: concepts, adoption, working a change, verification, agents, and practices. Links to normative sources; never redefines them. | When the framework or its recommended practice changes. | Framework maintainer. |
+| [Manual](https://github.com/idaik-stuff/lightweight-sdd/blob/main/docs/manual/README.md) | Explanatory guide: concepts, adoption, working a change, verification, agents, and practices. Links to normative sources; never redefines them. | When the framework or its recommended practice changes. | Framework maintainer. |
+| [Project rules](project-rules.md) | Repository-specific rules that add to `AGENTS.md`. | When the project adopts a lasting local rule. | Project owner. |
+| [Commands](development/commands.md) | Framework command registry; product commands are in the README. | When a framework command changes. | Framework maintainer. |
 | [Templates](templates/spec.md) | Reusable structure for specs, plans, and ADRs. | When their use reveals a genuine improvement. | Team owner. |
 
 The agent may draft and propose. It does not replace human approvals or invent approvers' names. The same person may take product and technical responsibility in a small team.

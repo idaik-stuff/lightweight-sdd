@@ -11,6 +11,10 @@ Targets 2.0.0.
 
 ### Changed
 
+- **Breaking:** adoption is through the installer only; "Use this template" is no longer a
+  supported path. Product commands stay in the product README "Commands" section, and
+  `AGENTS.md` points to both registries. `check-ci-setup` requires CODEOWNERS rows for
+  `.claude/`, `CLAUDE.md`, `.codex/`, and `.cursor/` only when those are installed.
 - The spec and plan templates mark every section as required, optional, or conditional
   for L2 and for L3. Non-applicable sections are deleted instead of filled with `N/A`;
   an L2 spec and plan aim at about one page. The spec header adds `Related changes:` and
@@ -50,6 +54,20 @@ Targets 2.0.0.
 
 ### Added
 
+- `scripts/install`: installs or upgrades the framework in a product repository for the
+  chosen clients only (`--target`, `--clients`, `--dry-run`, `--allow-dirty-source`). It
+  requires a clean change branch and a clean framework checkout, refuses before writing
+  on any problem (including symlinks and paths under `.git/`), never overwrites a
+  differing file on a fresh install, never replaces product-owned files on upgrade but
+  creates missing ones, never deletes (orphans are reported), and records
+  `.sdd/install.json`. Products no longer receive the adapter generator, the other
+  clients, the manual, or the framework's change history.
+- **Breaking for 1.0.0 adopters:** before the first upgrade, move rules added to
+  `AGENTS.md` into `docs/project-rules.md`, remove the `adapters` and `adapter-tests`
+  checks and `.agents/tools/`, then run the installer with `--clients`. The adoption
+  owner is now recorded in `docs/project-rules.md`.
+- `docs/development/commands.md` (framework command registry) and `docs/project-rules.md`
+  (project rules that upgrades never replace).
 - Opt-in `scripts/hooks/pre-push` hook that refuses pushes to the default branch, classified
   as an L3 framework path.
 - Optional `sdd-direct-push` workflow that flags commits reaching the default branch without

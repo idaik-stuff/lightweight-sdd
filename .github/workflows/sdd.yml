@@ -1,8 +1,8 @@
 name: Lightweight SDD
 
 # No path filters: the required gate must be produced for every pull request.
-# The only condition skips the upstream template repository, which has no real
-# code owners; in every repository created from the template it is always true.
+# The only condition skips the upstream framework repository, which has no real
+# code owners; in every repository where the framework is installed it is always true.
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, ready_for_review]

@@ -7,7 +7,7 @@ and this manual links to them rather than restating them.
 ## Chapters
 
 1. [Concepts](01-concepts.md): the problem, the five core ideas, and the parts of the framework.
-2. [Adoption](02-adoption.md): starting a new repository from the template or adding the framework to an existing one.
+2. [Adoption](02-adoption.md): installing the framework into a new or an existing repository.
 3. [Working a change](03-working-a-change.md): L0 to L3 from request to completion.
 4. [Verification and CI](04-verification-ci.md): registering checks, reading evidence, and activating the gate.
 5. [Agents](05-agents.md): using the workflows in each supported client and qualifying a client.

@@ -2,7 +2,7 @@
 
 The framework supplies one GitHub Actions adapter over the stack-neutral
 verification tools. Its files are ready; remote enforcement is **not activated
-by creating a repository from this template**. Real reviewer identities and
+by installing the framework**. Real reviewer identities and
 GitHub settings are supplied by each adopting repository.
 
 Contents: [execution](#execution-model), [declarations](#pr-declarations),
@@ -35,9 +35,9 @@ runs for that PR. Cancellation, a skipped prerequisite, neutral results, and
 failed checks do not count as successful inputs to the final gate.
 
 The workflow has one job condition: `sdd-policy` and `sdd-gate` are skipped
-only in the upstream template repository (`idaik-stuff/lightweight-sdd`), which
+only in the upstream framework repository (`idaik-stuff/lightweight-sdd`), which
 has no real code owners and therefore could never pass the ownership check. In a
-repository created from the template the condition is always true, so the gate
+repository where the framework is installed the condition is always true, so the gate
 still runs on every PR, including when its prerequisites fail or are skipped. You
 may delete the condition after adopting; do not add any other condition.
 
@@ -194,8 +194,8 @@ this is not a completely reproducible software supply chain.
 
 ### 1. Review and integrate the framework
 
-Create the repository from the template, or merge the framework deliberately
-into an existing repository. Run:
+Install the framework with `scripts/install` on a change branch of the product
+repository (see the README Quick start). Run:
 
 ```bash
 python3 scripts/verify standard --target framework
@@ -229,10 +229,9 @@ is an appropriate independent reviewer.
 ### 3. Establish the initial trusted version
 
 The first installation has a bootstrap boundary: a PR cannot substitute its
-own new policy when the base lacks `scripts/check-ci` and `.sdd/ci.json`. A
-repository created from the template has them in its initial commit. When
-adopting into an existing repository, the PR that adds the framework cannot
-validate itself through the trusted-base path.
+own new policy when the base lacks `scripts/check-ci` and `.sdd/ci.json`. The
+install PR, in a new or an existing repository, therefore cannot validate itself
+through the trusted-base path.
 
 Review that installation under the repository's existing governance, run
 local checks, and have a responsible independent reviewer inspect it.
@@ -335,7 +334,7 @@ approve their own PR. The local guards then become the main protection:
 - The optional `sdd-direct-push` workflow flags, after the fact, commits that reached
   the default branch without a merged PR. It never blocks a merge; disable it in the
   Actions UI if it is not wanted. Like `sdd.yml`, it is skipped in the upstream
-  template repository.
+  framework repository.
 
 The checks skip detached checkouts, which is how `sdd.yml` tests a PR. A custom job
 that checks out the default branch by name (for example on `push`) and runs
@@ -352,7 +351,7 @@ The absence of merge blocking is a platform limitation, not a successful
 enforcement result. When enforcement becomes available, complete steps 5 and 6
 and update the recorded state from what you observe. If you also deploy
 automatically, the same plan limits affect deployment; see the
-[continuous deployment recipe](../manual/recipes/continuous-deployment.md#a-private-repository-on-github-free-what-is-missing-and-why-it-matters).
+[continuous deployment recipe](https://github.com/idaik-stuff/lightweight-sdd/blob/main/docs/manual/recipes/continuous-deployment.md#a-private-repository-on-github-free-what-is-missing-and-why-it-matters).
 
 ## Registering product checks
 

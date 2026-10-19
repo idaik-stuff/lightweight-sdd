@@ -1,6 +1,6 @@
 # Plan: CHG-005-installer | Installer with client selection
 
-Status: `approved` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including the three refinements (installer files not shipped, upgrade never deletes, CODEOWNERS rows from installed clients).
+Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including the three refinements (installer files not shipped, upgrade never deletes, CODEOWNERS rows from installed clients).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -17,10 +17,12 @@ Inspected at base `aefa291` (main after CHG-004; the CHG-003/004 closeouts are m
 
 ## Technical approach
 
+Steps 1 to 3 describe the design accepted before review; the Deviations section records the round-1 refinements that supersede them (upgrade detection, migration refusal, stubs created on upgrade, path validation, `install.json` file list).
+
 1. `scripts/sdd/install.py` with a `scripts/install` launcher. The ownership manifest is code in that module:
    - `FRAMEWORK`: path patterns copied and replaced on upgrade (spec decision 2), plus `docs/development/commands.md`.
    - `CLIENTS`: per client, the generated paths above (`.agents/skills/**` for Codex, Cursor, and Copilot; `CLAUDE.md` with Claude).
-   - `PRODUCT`: stubs created only on a fresh install: copies of the starter `docs/product/*`, `docs/architecture/overview.md`, `docs/adr/README.md`; generated `docs/project-rules.md`, minimal `README.md` with a Commands section, `.sdd/verification.json` (the framework file without `adapters` and `adapter-tests`), `.sdd/ci.json`, `.sdd/risk-rules.json` (copied as they are until CHG-006), `.github/CODEOWNERS.example` filtered to installed paths.
+   - `PRODUCT`: stubs created only on a fresh install: copies of the starter `docs/product/*`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`; a minimal `README.md` with a Commands section, `.sdd/verification.json` (the framework file without `adapters` and `adapter-tests`), `.sdd/ci.json`, `.sdd/risk-rules.json` (copied as they are until CHG-006). `.github/CODEOWNERS.example`, filtered to installed paths, is framework-owned.
    - Excluded even under `scripts/`: `scripts/install`, `scripts/sdd/install.py`, `scripts/tests/test_install.py`. They need a framework checkout to work, so shipping them would give the product a command and a test that cannot pass there. This refines decision 2 ("`scripts/` complete") and needs owner acceptance.
 2. Run order, all checks before any write:
    1. Source checks: run from a framework checkout whose generated adapters have no drift (`sync_adapters.synchronize(check=True)` imported from the source checkout).
@@ -37,7 +39,7 @@ Inspected at base `aefa291` (main after CHG-004; the CHG-003/004 closeouts are m
 7. Adoption docs: README Quick start, `docs/manual/02-adoption.md` (single installer path, new-repository bootstrap sequence, collisions), `agent-compatibility.md` "Installation and maintenance" (framework repository vs product), `ci-enforcement.md` bootstrap wording.
 8. Tests:
    - `scripts/tests/test_install.py` (framework only): temporary source copy is not needed; the tests use this checkout as source and `Fixture` repositories as targets. Cases for AC-01, AC-02, AC-04 to AC-09, and an end-to-end case that runs the target's `scripts/check-docs` and `scripts/verify focused --target framework` (AC-03).
-   - `test_agent_governance.py`: CODEOWNERS tests updated for computed rows (AC-10), and client-specific assertions skipped when that client's files are not in the repository, so the suite also passes inside an installed product.
+   - `test_agent_governance.py`: CODEOWNERS tests updated for computed rows (AC-10), and client-specific assertions skipped when that client's files are not in the repository, so the suite also passes inside an installed product. (As implemented, the governance test checks the shipped example against `protected(ROOT)`; no client-specific assertion needed skipping.)
 9. CHANGELOG entry.
 
 Rejected alternatives:
@@ -91,6 +93,7 @@ Environment: Windows 11 with Python 3; Linux via WSL Ubuntu (native ext4 copy) f
 | AC-09 | Install, edit product files and one framework file, commit, upgrade without `--clients` | `test_install.py` | Product files byte-identical; framework file replaced; clients reused; orphan report when a client is dropped |
 | AC-10 | CODEOWNERS with only installed rows, with and without a missing installed row | `test_agent_governance.py` / `test_install.py` | Not blocked / blocked |
 | AC-11, AC-12 | Inspection | Diff review and independent review | As specified |
+| AC-14, AC-15 | 1.0.0 and migrated layouts, unrelated `.sdd/`, file at a parent path, symlinks, target equals source, dirty source | `test_install.py` | Refusal or collision, target unchanged; migrated layout upgraded |
 | AC-13 | Full framework verification | `python3 scripts/check-docs`; `python3 scripts/verify broad --target framework --base main --level L3 --change CHG-005-installer` | Passed |
 | Level floor | Change-level check | `python3 scripts/check-change-level --base main --level L3 --change CHG-005-installer --scope broad` | Passed |
 | L3 review | Independent review in a fresh session | `sdd-independent-review` agent with `.agents/review/independent-review.md` | Findings recorded and resolved |
@@ -101,17 +104,58 @@ Environment: Windows 11 with Python 3; Linux via WSL Ubuntu (native ext4 copy) f
 
 ## Deviations and decisions during execution
 
-None recorded yet.
+- The README collision rule (decision 3) made every new-repository install collide, because GitHub's initial README has no `## Commands` section. Owner decision (2026-10-19, in conversation): keep the rule; a new repository starts without a README (for example only GitHub's `.gitignore` or `LICENSE`), or with a README that has the section. Spec AC-01 and decision 4 updated; the collision message explains the fix.
+- `.agents/README.md` linked to `adapters/clients.json`, which is not shipped; found by the first end-to-end install (`check-docs` failed in the product). The row is now plain text marked "framework repository only", and the Distribution section describes the installer.
+- `docs/project-rules.md` also exists in this repository (AGENTS.md links to it); the installer copies it as the product stub.
+- The installer reads new, not yet committed source files too and records `source_dirty` in `.sdd/install.json`, so installs from a development checkout are visible as such.
+- Executable bits come from the source index (`100755`); on Windows the installer prints the `git add --chmod=+x` command for the product's first commit instead of staging anything.
+- `.sdd/verification.json`: the `automation-tests` timeout rose from 120 to 300 seconds, because the suite with the installer tests takes about 120 seconds on Windows and the first broad run after round 2 was blocked by the timeout. Products receive the same value.
+- Independent review round 3, focused on `mode()`/`plan()`, the new tests, and the timeout (2026-10-19): no blocking findings. N1 (migrated 1.0.0 orphan list includes product files in unchosen clients' directories) documented in the manual's migration note; N2 (a test wrote into the framework checkout) fixed by mocking the untracked listing; N3 (broad `TypeError`/`AttributeError` catch can mask installer bugs) accepted as residual risk, since nothing is written before planning ends.
+- Independent review round 2 (2026-10-19): no blocking findings. Non-blocking R1 (stale manual text: adoption owner sentence, maintenance and agents chapters, ownership table), R2 (migrated 1.0.0 upgrades did not report unchosen clients' entrypoints), R3 (malformed JSON shapes raised tracebacks), R4 (CHANGELOG entry), R5 (this Technical approach predates round 1), R6 (clean-source path and upgraded record untested) were fixed: manual 02/05/maintenance and CHANGELOG reworded, orphans for unchosen clients in migrated layouts, `TypeError`/`AttributeError` refused, a note above step 1, and three tests added.
+- Independent review round 1 (owner accepted all corrections, 2026-10-19, in conversation):
+  - F1 (blocking): partial writes were possible (file at a parent path, dangling or directory symlinks, `.sdd` as a file, uncaught write errors). Every destination, including README, `.gitignore`, `.gitattributes`, and `install.json`, is now checked by `unsafe()` before writing; failures during writing return `failed` with the files written.
+  - F2 (blocking): upgrading a 1.0.0 adopter would break `check-docs` (no `docs/project-rules.md`) and replace its `AGENTS.md` rules. Missing product stubs are now created on upgrade; unmigrated 1.0.0 layouts are refused with migration steps (spec decisions 1 and 2 refined, AC-14).
+  - F3 (blocking): `workflows.md`, `manual/maintenance.md`, `manual/README.md`, manual 02 step 9, `automation.md`, README, and workflow comments still described template or copy adoption; rewritten. The earlier AC-11/AC-12 evidence was inaccurate.
+  - F4: any symlink component and any path under `.git/` is refused.
+  - F5: upgrade mode needs `.sdd/install.json` or a migrated 1.0.0 layout; other `.sdd/` and the framework checkout itself are refused.
+  - F6: a dirty source is refused unless `--allow-dirty-source`, which prints a warning; only tracked files ship from a clean source.
+  - F7: the adoption owner moved from the methodology header to `docs/project-rules.md`.
+  - F8: `install.json` records the shipped file list; orphans are previous files no longer shipped, so product files under `scripts/` are not reported.
+  - F9: written files get 0644, executables 0755.
+  - F10: this plan's ownership and governance-test wording aligned with the code.
+  - F11: tests added for the no-README stub, `install.json` version/commit/files, dry run with collisions, write failure, and the AC-14/AC-15 cases.
 
 ## Completion evidence
 
-Verified version or diff: pending. Relevant environment: pending.
+Verified version or diff: working snapshot on branch `chg-005-installer` after review round 1 (HEAD `c8316b3` plus uncommitted changes; snapshot in the Broad gate row; first run `4d47442bcc6fe307`), base `main` (`aefa291`; the CHG-003/004 closeout merged to `origin/main` later touches only those records).
+Relevant environment: Windows 11, Git for Windows, Python 3.14.7; Linux via WSL Ubuntu, Python 3.14.4, on a native ext4 copy committed as a Git repository (so the installer tests run there too).
 
 | AC / check | Result | Evidence summary / reference |
 | --- | --- | --- |
-| AC-01 to AC-13 | Not run | Pending implementation. |
+| AC-01 | Passed | `test_install.py` `test_fresh_install_for_one_client` (target without README): framework, Claude, and product files including the README stub; no tools, adapters config, other clients, manual, framework specs, installer, or CHANGELOG; `LICENSE` untouched; `install.json` clients, commit, version, and file list; product `verification.json` without generator checks; filtered `CODEOWNERS.example`. `test_written_files_have_checkout_permissions` (POSIX: 0644/0755). |
+| AC-02 | Passed | `test_client_selection` (`codex,cursor`). |
+| AC-03 | Passed | `test_installed_product_passes_its_own_checks` (`check-docs`, `verify focused --target framework`). Manual, after review round 1: products installed without README and committed ran `verify standard --target framework` with 220 automation tests passing on Windows (`claude`, after the printed `git add --chmod=+x`) and on Linux (`codex,cursor`, files 644/755 without extra steps). |
+| AC-04, AC-07 | Passed | `test_refuses_default_branch`, `test_refuses_dirty_worktree`, `test_refuses_unknown_client_and_nested_target`; target snapshots unchanged. |
+| AC-05, AC-06 | Passed | `test_collisions_are_listed_and_nothing_is_written` (`AGENTS.md`, README without Commands, `.gitignore`, `.gitattributes`). |
+| AC-08 | Passed | `test_dry_run_reports_and_writes_nothing` and the dry run inside the collision test, whose actions equal the real run's. |
+| AC-09 | Passed | `test_upgrade_keeps_product_files_and_recorded_clients` (product files byte-identical, deleted `docs/adr/README.md` recreated, framework file replaced, recorded clients reused, `scripts/build.sh` not an orphan), `test_upgrade_reports_dropped_client_files_as_orphans`, `test_upgrade_without_record_needs_clients`. |
+| AC-10 | Passed | `test_ci.py` `test_client_rows_required_only_when_installed`, `test_protected_rows_follow_installed_clients`; governance test uses `protected(ROOT)`. |
+| AC-11, AC-12 | Passed (review) | Command registry split as specified; after review round 1, `workflows.md`, `manual/maintenance.md`, `manual/README.md`, manual 02, `automation.md`, `agent-compatibility.md`, `ci-enforcement.md`, README, and workflow comments describe only the installer; the only remaining mention of "Use this template" is manual 02's warning not to use it (and CHANGELOG history). |
+| AC-14, AC-15 | Passed | `test_framework_1_0_target_needs_migration`, `test_unrelated_sdd_directory_is_refused`, `test_migrated_1_0_target_upgrades_and_gains_missing_stubs`, `test_file_where_a_directory_is_needed_is_a_collision`, `test_symlinks_are_collisions` (ran on Windows and Linux), `test_refuses_the_framework_checkout_itself`, `test_refuses_dirty_source_without_flag`, `test_clean_source_ships_tracked_files_only`, `test_migrated_1_0_target_reports_unchosen_client_files`, `test_malformed_target_json_is_a_refusal`, `test_write_failure_reports_what_was_written`. Manual: the Windows install without `--allow-dirty-source` was refused; with it, the warning was printed. |
+| AC-13 | Passed | `check-docs` passed; `sync_adapters --check` 0 stale; broad gate below. |
+| Full suites | Passed | Windows: 244 automation tests (7 skips: platform-specific) and 57 adapter tests. Linux native ext4 Git repository: 244 (no skips) and 57. |
+| Level floor | Passed | `python3 scripts/check-change-level --base main --level L3 --change CHG-005-installer --scope broad`: floor L3. |
+| Broad gate | Passed | `python3 scripts/verify broad --target framework --base main --level L3 --change CHG-005-installer`: docs, adapters, adapter-tests, automation-tests (121 s, 244 tests) passed on snapshot `d43352e0552eb42a` after review round 3; report `.sdd/results/verify-20261019T160339812185Z-e325a64b.json` (local, untracked). An earlier pass on `3aa63cb80c3a3600` preceded the round-3 test fix. The run before the timeout change (`verify-20261019T155425171654Z-09dfbbd2.json`) was blocked by the 120 s timeout; earlier runs `4d47442bcc6fe307` and `f65689090aed0135` passed. Only this line changed afterwards. |
 
-Independent review: pending; required for L3.
+Independent review: automated reviewer (`sdd-independent-review`, Claude sub-agent), fresh context without the implementation conversation (a different reviewer from CHG-001 to CHG-004), read-only tools; it ran no code, and every count, hash, and result it cites is requester-supplied. Round 2 resumed the same reviewer context. Not a human review or approval.
+
+| Round | Target | Result | Resolution |
+| --- | --- | --- | --- |
+| 1 | Full patch vs `main`, snapshot `4d47442bcc6fe307` | Blocking: F1 (partial writes possible), F2 (1.0.0 upgrade breaks `check-docs` and replaces `AGENTS.md` rules), F3 (documents still describing template or copy adoption). Non-blocking: F4 (symlinked directories, `.git/`), F5 (upgrade detection, target equal to source), F6 (dirty source shipped), F7 (adoption owner in a framework file), F8 (product files reported as orphans), F9 (0600 permissions), F10 (plan wording), F11 (test gaps) | All fixed with owner acceptance; spec decisions 1 and 2 refined, AC-09 extended, AC-14 and AC-15 added; see Deviations |
+| 2 | Full patch vs `main`, snapshot `f65689090aed0135` | No blocking findings. Non-blocking: R1 (stale manual text), R2 (migrated 1.0.0 upgrades did not report unchosen clients), R3 (malformed JSON tracebacks), R4 (CHANGELOG), R5 (plan approach text), R6 (clean-source and record tests) | All fixed; see Deviations. Focused re-review done as round 3 |
+| 3 | `install.py`, `test_install.py`, `verification.json` vs `main`, snapshot `3aa63cb80c3a3600` | No blocking findings. Non-blocking: N1, N2, N3 (observation) | N1 documented, N2 fixed, N3 accepted as residual risk |
+
+Review limitations: an isolated session of the same model is not human independence; round 2 was not a fresh context. Not exercised: CI (`sdd-gate` skipped in this repository), a real adopter install, and an upgrade of a real 1.0.0 adopter. Windows junctions are not detected as symlinks (Git cannot commit them).
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design; the installer is exercised only against local fixture repositories, not a real adopter.
 

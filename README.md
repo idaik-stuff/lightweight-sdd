@@ -9,8 +9,9 @@ review for the riskiest changes. It ships agent workflows for Claude Code, Codex
 Cursor, and Copilot VS Code, deterministic local checks, and an optional GitHub
 Actions gate.
 
-This repository is a template: create your project from it and replace the product
-placeholders in `docs/product/` and `docs/architecture/` with your own.
+Products adopt it with the installer below rather than by copying this repository: this
+repository also holds the adapter generator, the manual, and its own change history,
+which products do not need.
 
 New to the framework? Start with the [manual](docs/manual/README.md): concepts,
 adoption, working a change, verification and CI, agents, practices, and a complete
@@ -18,64 +19,60 @@ worked example.
 
 ## Quick start
 
-1. Create a repository from this template (**Use this template** on GitHub), or merge
-   the framework deliberately into an existing repository. Preserve existing
-   organization instructions, permissions, documents, and configurations. In an existing
-   repository, add the framework on a branch and through a pull request.
-2. Check that the framework is healthy:
-   `python3 scripts/verify standard --target framework`.
-3. Work on branches from now on, including the template clean-up. Only the initial
-   commit belongs on the default branch. Once per clone, enable the guard that refuses
-   pushes to it:
+Install the framework into your product repository with the installer; it ships only
+what a product needs, for the agent clients you choose. Requirements: Git and Python 3.10+.
+
+1. Prepare the product repository.
+   - **New repository:** create it without a README (for example with only GitHub's
+     `.gitignore` or license), or with a README that already has a `## Commands`
+     section. That initial commit is the only one on the default branch.
+   - **Existing repository:** nothing to prepare; the installer stops and lists any file
+     it would have to overwrite, and you resolve each collision by hand.
+2. Clone it, create a change branch (for example `chg-000-install-sdd`), and keep the
+   worktree clean.
+3. From a checkout of this repository, preview and then run the installer:
+   `python3 scripts/install --target PATH --clients claude --dry-run`, then without
+   `--dry-run`. Clients: `claude`, `codex`, `cursor`, `copilot-vscode` (comma-separated).
+   On Windows, run the `git add --chmod=+x` command the installer prints.
+4. In the product, check the framework: `python3 scripts/verify standard --target framework`.
+   Commit, push, and open the install as a pull request. Its CI gate cannot pass, because
+   the base has no framework yet; merge it under the
+   [bootstrap exception](docs/development/ci-enforcement.md#3-establish-the-initial-trusted-version).
+5. Once per clone, enable the guard that refuses pushes to the default branch:
    `git config core.hooksPath scripts/hooks`. The hook and the checks read the default
    branch from this repository's `git config sdd.defaultBranch <name>`, else from
    `origin/HEAD` (set it with `git remote set-head origin --auto`). They fail instead of
    passing when neither exists, or when the declared branch does not exist or disagrees
-   with `origin/HEAD`.
-   Every change, at every level, goes on its own branch and through a pull request;
-   in GitHub, allow squash merging only, with the default message "Pull request title
-   and description", and delete head branches automatically.
-4. Activate the CI gate following the
+   with `origin/HEAD`. Every change, at every level, goes on its own branch and through
+   a pull request; in GitHub, allow squash merging only, with the default message
+   "Pull request title and description", and delete head branches automatically.
+6. Activate the CI gate following the
    [activation guide](docs/development/ci-enforcement.md#activation-sequence), and open
-   your first change as a pull request to see `sdd-gate` run.
-5. Complete [the brief](docs/product/brief.md) and [the MVP scope](docs/product/mvp.md)
-   first. Add only necessary cross-cutting requirements to [the PRD](docs/product/prd.md).
-   Describe in [architecture](docs/architecture/overview.md) what actually exists.
-   Proposed architecture belongs in the first plan and, when justified, an ADR.
-6. When the stack exists, register its real checks in `.sdd/verification.json`
-   (see [connecting the product](docs/development/automation.md#connecting-the-product)).
+   your next change as a pull request to see `sdd-gate` run.
+7. Complete the brief and MVP scope in `docs/product/` first, describe in
+   `docs/architecture/` what actually exists, and register the stack's real checks in
+   `.sdd/verification.json` and the README "Commands" section when the stack exists.
+
+To upgrade later, run the installer again from a newer framework checkout on a change
+branch; it replaces only framework-owned files and keeps the recorded clients. Review
+that pull request as L3.
 
 [AGENTS.md](AGENTS.md) contains permanent rules. [The methodology](docs/development/methodology.md)
 defines gates; [the documentation index](docs/README.md) identifies each canonical source.
 
 ## Commands
 
-Run from the repository root. Framework automation requires Python 3.10 or later and
-uses only the standard library; Git is required for change checks and product verification.
+Framework commands are listed in [docs/development/commands.md](docs/development/commands.md):
+documentation checks, framework and product verification, the change-level check, the
+CI ownership check, the automation tests, and the pre-push hook.
 
-This README is the human command registry. `.sdd/verification.json` is the machine
-source for automated check arguments and profile membership. The template registers
-no product checks: add your stack's commands to the table below and to that file.
-
-| Operation | Command | Scope / prerequisites |
-| --- | --- | --- |
-| Check all framework Markdown | `python3 scripts/check-docs` | Links, anchors, and structural conventions; not semantic approval. |
-| Focused framework verification | `python3 scripts/verify focused --target framework` | Documentation and generated adapters. |
-| Standard framework verification | `python3 scripts/verify standard --target framework` | Focused checks plus adapter and automation tests. |
-| Broad framework verification | `python3 scripts/verify broad --target framework` | Inherits standard; no extra broad framework-only checks are configured. |
-| Change-level check | `python3 scripts/check-change-level --base BASE --level LEVEL` | Replace placeholders; add `--change ID` for L2/L3. |
-| Product verification | `python3 scripts/verify MODE --base BASE --level LEVEL` | Add `--change ID` for L2/L3. Runs registered framework + product checks; blocked until product checks exist. |
-| Check local CI ownership setup | `python3 scripts/check-ci-setup` | Exits 3 until real CODEOWNERS are configured; does not audit GitHub. |
-
-All selected checks are required. `standard` inherits `focused`; `broad` inherits both.
-Manual, contract, migration, security, or recovery evidence remains change-specific
-until a real deterministic command is added.
-
-Reports are written locally to ignored `.sdd/results/`. Keep reviewed evidence
-summaries in the plan or change record; do not commit raw reports or logs by default.
-Approval, independent review, and deployment are separate decisions.
+Product commands belong in this section of a product's own README, next to the checks
+registered in `.sdd/verification.json`. This framework repository has no product, so it
+registers none.
 
 ### Framework maintenance commands
+
+These exist only in this repository; the installer does not ship them.
 
 | Operation | Command | Scope |
 | --- | --- | --- |
@@ -83,11 +80,7 @@ Approval, independent review, and deployment are separate decisions.
 | Regenerate adapters | `python3 .agents/tools/sync_adapters.py` | Create or update the 20 owned discovery, metadata, reviewer, and bridge files. |
 | Inspect adapter inventory | `python3 .agents/tools/sync_adapters.py --inventory` | Read-only JSON file consistency; never live-client certification. |
 | Test adapter generator | `python3 -m unittest discover -s .agents/tools -p 'test_*.py' -v` | Isolated maintenance tests. |
-| Test automation | `python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v` | Isolated CLI, configuration, Git, documentation, and runner tests. |
-
-The command entrypoints also have executable permissions for POSIX checkouts. The
-`python3 scripts/...` form avoids dependence on executable-bit preservation. Substitute
-`python` only when it refers to the supported Python 3 interpreter.
+| Install or upgrade the framework in a product | `python3 scripts/install --target DIR --clients CLIENTS [--dry-run]` | Run from this checkout; the target must be on a clean change branch. See [adoption](docs/manual/02-adoption.md). |
 
 ## Use with agents
 
@@ -159,6 +152,6 @@ invoked through that trusted checkout's runner.
 ## What is intentionally left out
 
 No application stack, product check, deployment, user secret, or external connector
-is included. Remote CI/ruleset enforcement is not activated by the template. There is
+is included. Remote CI/ruleset enforcement is not activated by the installer. There is
 no automatic all-phases command, mandatory third feature artifact, or extra approval
 system.

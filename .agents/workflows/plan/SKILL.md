@@ -18,8 +18,8 @@ Edit the active plan and, only when justified, its proposed ADR or design detail
 2. Inspect the actual affected implementation, callers, contracts, schemas, tests,
    and only relevant architecture/ADRs. Distinguish existing paths from proposed ones.
    For a greenfield repository, state what does not exist before proposing components.
-3. Read the [plan template](../../../docs/templates/plan.md) and the README command
-   registry. Keep the sections the template marks required for the level and the
+3. Read the [plan template](../../../docs/templates/plan.md) and the command registry
+   (`docs/development/commands.md`, README product commands). Keep the sections the template marks required for the level and the
    conditional ones whose condition holds, add optional ones only when they help, and
    delete the rest. Select the smallest viable approach; compare real alternatives only
    where a tradeoff matters. Do not replace the project stack without authorization.

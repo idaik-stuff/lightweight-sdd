@@ -50,7 +50,7 @@
         "test_*.py",
         "-v"
       ],
-      "timeout_seconds": 120
+      "timeout_seconds": 300
     }
   ],
   "profiles": {

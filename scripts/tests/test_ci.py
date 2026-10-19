@@ -8,7 +8,7 @@ import unittest
 from support import Fixture, ROOT, command, manifest
 from sdd.common import ConfigError
 from sdd.ci import START, END, assess_ci, ci_configuration, clean_checkout, event_context, final_gate, metadata
-from sdd.ci_setup import PROTECTED, check_setup, owners
+from sdd.ci_setup import PROTECTED, check_setup, owners, protected
 from sdd.verify import run
 
 
@@ -235,6 +235,21 @@ class SetupTests(Fixture):
 
     def test_empty_owner_rejected(self):
         self.assertTrue(owners(self.valid().replace('/scripts/ @fixture-owner','/scripts/')))
+
+    def test_client_rows_required_only_when_installed(self):
+        rows = [p + ' @fixture-owner' for p in PROTECTED if p != '/.cursor/']
+        self.write('.github/CODEOWNERS', ''.join(row + chr(10) for row in rows))
+        self.assertEqual(check_setup(self.root)['status'], 'local-files-ready')
+        self.write('.cursor/agents/sdd-independent-review.md', 'x')
+        report = check_setup(self.root)
+        self.assertEqual(report['status'], 'blocked')
+        self.assertIn('/.cursor/', ' '.join(report['errors']))
+
+    def test_protected_rows_follow_installed_clients(self):
+        self.assertNotIn('/.codex/', protected(self.root))
+        self.write('.codex/agents/sdd-independent-review.toml', 'x')
+        self.assertIn('/.codex/', protected(self.root))
+        self.assertIn('/.github/', protected(self.root))
 
     def test_product_ownership_above_block_allowed(self):
         self.assertFalse(owners('/src/ @fixture-org/product\n'+self.valid()))

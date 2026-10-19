@@ -6,7 +6,7 @@ and what you record. The [worked example](example/README.md) contains the finish
 artifacts. The procedures themselves are in the
 [workflow sources](../../.agents/workflows/spec/SKILL.md) and the
 [methodology](../development/methodology.md); the commands are in the
-[README](../../README.md#commands).
+[command registry](../development/commands.md).
 
 Prompts below use Claude Code syntax (`/sdd-...`). In Codex use `$sdd-...`; Cursor and
 Copilot VS Code use the same `/sdd-...` names. Chapter 5 covers the differences.

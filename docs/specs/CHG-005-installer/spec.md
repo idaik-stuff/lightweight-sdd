@@ -22,15 +22,15 @@ Observed at `aefa291` (main after CHG-004):
 
 Closed design decisions (ideation, 2026-10-19, point 2, and the CHG-005 design discussion of the same day):
 
-1. Installer form: `scripts/install`, Python standard library, run from a framework checkout as `python3 scripts/install --target DIR --clients A,B [--dry-run]`. The target is a Git repository root on a non-default branch with a clean worktree. A fresh install (no `.sdd/` in the target) copies the framework files and empty product documents and never overwrites a differing file: it lists collisions and stops. An upgrade (target has `.sdd/`) replaces only framework-owned files and never touches product documents, specs, or configuration. It records `.sdd/install.json` with the framework version and the chosen clients.
+1. Installer form: `scripts/install`, Python standard library, run from a framework checkout as `python3 scripts/install --target DIR --clients A,B [--dry-run]`. The target is a Git repository root on a non-default branch with a clean worktree. A fresh install (no `.sdd/` in the target) copies the framework files and empty product documents and never overwrites a differing file: it lists collisions and stops. An upgrade replaces only framework-owned files and never replaces product documents, specs, or configuration. It records `.sdd/install.json` with the framework version, commit, chosen clients, and installed file list. Refined after independent review (owner, 2026-10-19): a target is an upgrade only when `.sdd/install.json` exists, or when it is a migrated 1.0.0 layout (`scripts/sdd/` and `.sdd/verification.json`, no generator) named with `--clients`; an unmigrated 1.0.0 layout is refused with migration steps; any other `.sdd/` is refused; the framework checkout itself is refused as a target; a source checkout with uncommitted or untracked files is refused unless `--allow-dirty-source` is given.
 2. Shipped files:
    - Framework-owned (copied, replaced on upgrade): `AGENTS.md` (ending with a pointer to the product-owned `docs/project-rules.md`), `.agents/workflows`, `.agents/review`, `.agents/references`, `.agents/evals`, `.agents/README.md`, the wrappers of the chosen clients only, `.github/workflows/sdd.yml`, `.github/workflows/sdd-direct-push.yml`, `.github/pull_request_template.md`, `.github/CODEOWNERS.example`, `.github/sdd-ruleset.template.json`, `scripts/` (including `hooks/` and the automation tests), `docs/development/`, `docs/templates/`, `docs/README.md`, `docs/specs/README.md`.
-   - Product-owned (created only on a fresh install): `docs/product/*`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`, `.sdd/verification.json` without `adapters`/`adapter-tests`, `.sdd/ci.json`, `.sdd/risk-rules.json`.
+   - Product-owned (created when missing, on install and on upgrade, never replaced; refined after review): `docs/product/*`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md` (also holds the adoption owner), `.sdd/verification.json` without `adapters`/`adapter-tests`, `.sdd/ci.json`, `.sdd/risk-rules.json`.
    - Not shipped: `.agents/tools`, `.agents/adapters/clients.json`, wrappers of clients not chosen, `docs/manual/`, `docs/specs/CHG-*`, `CHANGELOG.md`, `LICENSE`.
    - `.gitignore` and `.gitattributes`: created when missing; when present, the required lines are checked and missing ones are reported as collisions.
    - The CODEOWNERS ownership check adapts to the installed clients.
 3. Commands: framework commands move to the framework-owned `docs/development/commands.md`. Product commands live in the product's `README.md` "Commands" section; on a fresh install without a README the installer creates a minimal one with that section; an existing README without it is a collision. `AGENTS.md` and the workflows point to both. The framework repository's README keeps a summary and the generator maintenance commands.
-4. The installer is the only adoption path, for new and existing repositories. A new repository starts with a README-only initial commit on the default branch, then a `chg-000-install-sdd` branch, the install, and a PR merged under the existing bootstrap exception; then the hook is enabled. Disabling the GitHub "template repository" flag is the owner's action. README and manual 02 describe this single path; the manual stays in the framework repository. Releasing 2.0.0 happens after CHG-007.
+4. The installer is the only adoption path, for new and existing repositories. A new repository starts with an initial commit on the default branch that has no README, or a README that already has a `## Commands` section (owner decision during implementation, 2026-10-19, keeping the collision rule of point 3), then a `chg-000-install-sdd` branch, the install, and a PR merged under the existing bootstrap exception; then the hook is enabled. Disabling the GitHub "template repository" flag is the owner's action. README and manual 02 describe this single path; the manual stays in the framework repository. Releasing 2.0.0 happens after CHG-007.
 
 ## Scope and non-goals
 
@@ -56,7 +56,8 @@ Does not include:
 - Installing into a new repository on a change branch with `--clients claude` produces a repository with the framework-owned files, Claude's wrappers only, empty product documents, a minimal README with a Commands section, and `.sdd/install.json`; nothing from the not-shipped list.
 - In that installed repository, the documented framework verification passes without the generator.
 - Any refusal (default branch, dirty worktree, collisions, unknown client, not a repository root) happens before the first write and leaves the target unchanged.
-- An upgrade leaves every product-owned file byte-for-byte unchanged, replaces framework-owned files, and keeps the recorded clients unless `--clients` changes them.
+- An upgrade leaves every existing product-owned file byte-for-byte unchanged, creates missing ones, replaces framework-owned files, keeps the recorded clients unless `--clients` changes them, and reports as orphans only files a previous install shipped and this version no longer ships.
+- Destinations behind a symlink, under `.git/`, or below a file where a directory is needed are collisions, found before any write; a failure during writing is reported with the files already written.
 - `--dry-run` reports the same actions and refusals as a real run and writes nothing.
 
 ## Acceptance criteria
@@ -65,7 +66,7 @@ Include at least one failure or boundary AC, or state in one line why there is n
 
 | ID | Scenario / precondition | Action | Observable outcome |
 | --- | --- | --- | --- |
-| AC-01 | Target: Git root with only a README commit, on branch `chg-000-install-sdd`, clean | `scripts/install --target T --clients claude` | Exit 0; framework-owned files, Claude wrappers, product-owned stubs, and `.sdd/install.json` (version, `["claude"]`) exist; no not-shipped file and no other client's wrapper exists |
+| AC-01 | Target: Git root whose initial commit has no README, or a README with a `## Commands` section, on branch `chg-000-install-sdd`, clean | `scripts/install --target T --clients claude` | Exit 0; framework-owned files, Claude wrappers, product-owned stubs, and `.sdd/install.json` (version, `["claude"]`) exist; no not-shipped file and no other client's wrapper exists |
 | AC-02 | Same target | `--clients codex,cursor` | Only Codex and Cursor wrappers are present; no `.claude/` or Copilot files |
 | AC-03 | Freshly installed target (AC-01) | Run `python3 scripts/verify standard --target framework` and `python3 scripts/check-docs` inside it | Both pass; no `adapters` or `adapter-tests` check is registered |
 | AC-04 | Target on its default branch, or with uncommitted changes | Run the installer | Refuses with a clear message; target unchanged |
@@ -73,19 +74,21 @@ Include at least one failure or boundary AC, or state in one line why there is n
 | AC-06 | `.gitignore` exists without `.sdd/results/`, or `.gitattributes` without LF normalization | Fresh install | Reported as collisions; files not edited |
 | AC-07 | Unknown client name, or `--target` not a repository root | Run the installer | Refuses before writing |
 | AC-08 | Any of the cases above | Run with `--dry-run` | Same report and exit status; target unchanged |
-| AC-09 | Installed target whose product files were edited (`docs/product`, `docs/project-rules.md`, README, `.sdd/verification.json` with a product check) and one framework file modified | Upgrade from a newer framework checkout without `--clients` | Product files unchanged; framework file replaced; recorded clients reused; `.sdd/install.json` version updated |
+| AC-09 | Installed target whose product files were edited (`docs/product`, `docs/project-rules.md`, README, `.sdd/verification.json` with a product check), one product file deleted, a product script added under `scripts/`, and one framework file modified | Upgrade without `--clients` | Existing product files unchanged; deleted product file recreated; framework file replaced; recorded clients reused; the product script is not an orphan; `.sdd/install.json` updated |
 | AC-10 | Installed target with one client | Run `scripts/check-ci-setup` with a CODEOWNERS covering only the installed paths | Not blocked for missing rows of clients that are not installed; still blocked for missing rows of installed paths |
 | AC-11 | Framework repository after this change | Read `AGENTS.md`, the `verify` workflow, `docs/development/commands.md`, README | Framework commands live in `commands.md`; `AGENTS.md` and workflows point to it and to the product README Commands section; README keeps a summary and the generator commands; `AGENTS.md` points to `docs/project-rules.md` |
 | AC-12 | Updated README Quick start, manual 02, agent-compatibility, ci-enforcement | Read them | The installer is the only adoption path; no instruction to use "Use this template" remains; the new-repository bootstrap sequence is described |
+| AC-14 | A 1.0.0 layout with `.agents/tools/` or generator checks; an unrelated `.sdd/`; a migrated 1.0.0 layout | Run the installer | First refused with the migration steps, second refused, third upgraded with `--clients` (refused without), gaining `docs/project-rules.md` |
+| AC-15 | A file where a directory is needed, a symlinked leaf or directory, the framework checkout as target, a dirty source without `--allow-dirty-source` | Run the installer | Collision or refusal before any write; target unchanged |
 | AC-13 | Repository at the end of this change | `scripts/check-docs`, `scripts/verify broad --target framework` | Pass |
 
-AC-04 to AC-08 are the refusal boundaries; AC-09 is the property that the product's work is never overwritten.
+AC-04 to AC-08, AC-14, and AC-15 are the refusal boundaries; AC-09 is the property that the product's work is never overwritten.
 
 ## Constraints and compatibility
 
 - Property at risk: product-owned files are never modified by an install or upgrade (AC-05, AC-09), and refusals are all-or-nothing (AC-04 to AC-08).
 - The framework repository keeps its four clients, the generator, and its checks; nothing about its own verification gets weaker.
-- Existing adopters on 1.0.0 have no `.sdd/install.json`; treating such a repository as an upgrade requires the clients to be given explicitly.
+- Existing adopters on 1.0.0 have no `.sdd/install.json`; they migrate first (rules out of `AGENTS.md`, generator checks and `.agents/tools/` removed) and then upgrade with explicit `--clients` (AC-14).
 - Standard library only, Python 3.10+, works on Windows and Linux; no network access.
 
 ## Uncertainties
@@ -94,7 +97,7 @@ None open. The design points were closed with the owner on 2026-10-19.
 
 ## Acceptance and next steps
 
-Scope acceptance: accepted by Idaika Iglesias on 2026-10-19 (in conversation), with AC-01 to AC-13. Next: plan with strategy.
+Scope acceptance: accepted by Idaika Iglesias on 2026-10-19 (in conversation), with AC-01 to AC-13. During implementation the owner chose to keep the README collision rule and to change the new-repository start instead (AC-01 precondition and decision 4 wording). After independent review round 1 the owner accepted the refinements to decisions 1 and 2, AC-09, and the new AC-14 and AC-15.
 
 Related plan: [plan.md](plan.md). States and completion rules: [docs/specs/README.md](../README.md).
 

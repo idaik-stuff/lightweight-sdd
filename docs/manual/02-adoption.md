@@ -1,51 +1,73 @@
 # 2. Adoption
 
-This chapter walks through adopting the framework, either by starting a new repository
-from the template or by adding it to an existing one. Each step links to the normative
-source that defines it.
+This chapter walks through adopting the framework with the installer, in a new or an
+existing repository. Each step links to the normative source that defines it.
 
-Requirements: Git, Python 3.10 or later (standard library only), and GitHub if you
-want the optional CI gate. No other tools are installed or assumed.
+Requirements: Git, Python 3.10 or later (standard library only), a checkout of the
+framework repository to run the installer from, and GitHub if you want the CI gate.
+No other tools are installed or assumed.
 
 ## Choose your path
 
 | Situation | Path | Main difference |
 | --- | --- | --- |
-| New project, no code yet | [From the template](#path-a-new-repository-from-the-template) | The framework is in the first commit, so the CI trusted base exists from day one. |
-| Existing project | [Into an existing repository](#path-b-adding-the-framework-to-an-existing-repository) | You merge files deliberately, resolve collisions, and handle a one-time CI bootstrap. |
+| New project, no code yet | [Install into a new repository](#install-the-framework) | Start the repository without a README, or with one that has a `## Commands` section. |
+| Existing project | [Install into an existing repository](#existing-repositories) | The installer lists collisions; you resolve them by hand before it writes anything. |
 
-Both paths end in the same [first-week checklist](#first-week-checklist).
+Both paths use the same installer and end in the same
+[first-week checklist](#first-week-checklist). Do not create a product with GitHub's
+"Use this template": that copies the generator, all four clients, this manual, and the
+framework's own change history.
 
-## Path A: new repository from the template
+## Install the framework
 
-### 1. Create the repository
+### 1. Prepare the repository
 
-On GitHub, choose **Use this template** and create your repository, then clone it.
-Without GitHub, copy the complete framework, including the hidden directories
-(`.agents/`, `.claude/`, `.codex/`, `.cursor/`, `.github/`, `.sdd/`) and the
-`.gitattributes` and `.gitignore` files.
+Create the product repository. For a new one, let its initial commit contain no
+README (for example only GitHub's `.gitignore` or license), or a README that already
+has a `## Commands` section: the installer never edits a README it did not create.
+That initial commit is the only one on the default branch. Clone it, create a change
+branch such as `chg-000-install-sdd`, and keep the worktree clean.
 
-Remove or replace anything that describes the framework rather than your project:
+### 2. Run the installer
 
-- `README.md`: keep the **Commands** section and its tables, because `AGENTS.md` points
-  agents there; rewrite the introduction for your project.
-- `LICENSE`: choose your own project's license.
-- `docs/manual/`: optional. Keep it as onboarding material, or delete it and link to
-  the upstream manual instead. Nothing else depends on it.
+From a checkout of the framework repository:
 
-### 2. Check the framework is healthy
+```bash
+python3 scripts/install --target ../my-product --clients claude --dry-run
+python3 scripts/install --target ../my-product --clients claude
+```
+
+Choose the clients you use: `claude`, `codex`, `cursor`, `copilot-vscode`,
+comma-separated. The installer refuses to run on the default branch or with
+uncommitted changes, and lists every collision without writing anything. It writes:
+
+| Owner | Files | On upgrade |
+| --- | --- | --- |
+| Framework | `AGENTS.md`, `.agents/` workflows, review, references, evals, the chosen clients' entrypoints, `.github/` workflows and templates, `scripts/`, `docs/development/`, `docs/templates/`, `docs/README.md`, `docs/specs/README.md` | Replaced |
+| Product | `README.md` (only if missing), `docs/product/`, `docs/architecture/overview.md`, `docs/adr/README.md`, `docs/project-rules.md`, `.sdd/verification.json`, `.sdd/ci.json`, `.sdd/risk-rules.json` | Created if missing, never replaced |
+| Record | `.sdd/install.json`: framework version, commit, clients, and installed files | Updated |
+
+On Windows, run the `git add --chmod=+x` command it prints so the entrypoints and the
+hook stay executable on other systems. Then, in the product:
 
 ```bash
 python3 scripts/verify standard --target framework
 ```
 
-This runs the document checks, the adapter drift check, and both maintenance test
-suites. A pass says only that the framework files are consistent; it says nothing
-about your product. See [automation](../development/automation.md#run-now).
+This runs the document checks and the automation tests. A pass says only that the
+framework files are consistent; it says nothing about your product. See
+[automation](../development/automation.md#run-now).
 
-From here on, every change goes on its own branch and through a pull request,
-including the clean-up described in step 1; see the README Quick start for the bootstrap order and
-the opt-in `pre-push` hook.
+Commit, push, and open the install as a pull request. Its CI gate cannot pass because
+the base has no framework yet; see [the CI bootstrap](#handle-the-ci-bootstrap-once).
+From here on, every change goes on its own branch and through a pull request; see the
+README Quick start for the opt-in `pre-push` hook. Project-specific agent rules go in
+`docs/project-rules.md`, which upgrades never replace.
+
+To upgrade later, run the installer again from a newer framework checkout on a change
+branch. It keeps the recorded clients unless you pass `--clients`, and lists files that
+are no longer shipped as orphans for you to remove in a reviewed change.
 
 ### 3. Name the owners
 
@@ -56,9 +78,9 @@ them in a small team:
 | --- | --- | --- |
 | Product owner | Scope and acceptance criteria in specs; product documents. | Each spec's acceptance field; product document headers. |
 | Technical owner | Plans, architecture, and ADRs. | Each plan's acceptance field; architecture header. |
-| Adoption owner | The working method itself and changes to it. | The [methodology](../development/methodology.md) header. |
+| Adoption owner | The working method itself and changes to it. | The header of `docs/project-rules.md`, which upgrades never replace. |
 
-Replace the `TBD` adoption owner in the methodology header now. The other owners are
+Replace the `TBD` adoption owner in `docs/project-rules.md` now. The other owners are
 filled in as the documents are written.
 
 ### 4. Define the product before the stack
@@ -145,8 +167,8 @@ Chapter 4 explains the CI gate in more depth.
 
 ### 9. Qualify your agent clients
 
-The repository ships adapters for Claude Code, Codex, Cursor, and Copilot VS Code. The
-generator always produces all four; adapters for clients you do not use are inert files.
+The installer ships entrypoints only for the clients you named (Claude Code, Codex,
+Cursor, Copilot VS Code). To add or drop one later, run it again with `--clients`.
 
 For each client you actually use, start a fresh session at the repository root and run
 the [compatibility trials](../../.agents/evals/compatibility.md): the `sdd-*` entries
@@ -154,28 +176,26 @@ appear, implementation is not selected automatically, and the reviewer has the
 expected restrictions. Record the client version and results. Until then, treat the
 client as unqualified. Chapter 5 covers each client.
 
-## Path B: adding the framework to an existing repository
+## Existing repositories
 
-The steps are the same as path A from step 2 onward, with three differences: merging,
+The steps are the same as for a new repository, with three differences: collisions,
 describing the existing system, and the CI bootstrap.
 
-### Merge, do not overwrite
+### Resolve collisions
 
-Copy the framework into a branch and resolve each collision by hand:
+The installer stops on any shipped file that already exists with other content, and
+lists it. Resolve each one by hand in the change branch, commit, and run it again:
 
 | Existing file | What to do |
 | --- | --- |
-| `AGENTS.md`, `CLAUDE.md` | Merge your existing agent rules into the framework's `AGENTS.md`. Keep it short and keep the classification table intact. `CLAUDE.md` should remain the one-line import. |
-| `.github/copilot-instructions.md` | The generator refuses to overwrite an unmarked file. Merge your instructions into `AGENTS.md`, then remove the old file and regenerate. |
-| `.claude/`, `.cursor/`, `.codex/`, `.agents/skills/` | Keep unrelated settings. Any existing entry whose name starts with `sdd-` is a collision that the generator rejects; rename yours. |
-| `.github/workflows/` | Keep your workflows. Add `sdd.yml` alongside them. |
-| `.github/pull_request_template.md` | Merge yours in, but keep the `sdd:metadata` block exactly as shipped. |
-| `README.md` | Add the framework rows to your existing **Commands** section (create one if missing). |
-| `.gitignore`, `.gitattributes` | Append the framework entries. |
+| `AGENTS.md`, `CLAUDE.md` | Move your agent rules to `docs/project-rules.md` (create it), then remove the old file so the framework's copy can be installed. |
+| `.github/copilot-instructions.md` | Merge your instructions into `docs/project-rules.md`, then remove the old file. |
+| `.claude/`, `.cursor/`, `.codex/`, `.agents/skills/` | Keep unrelated settings. Any existing entry whose name starts with `sdd-` collides with the framework; rename yours. |
+| `.github/workflows/` | Keep your workflows; only `sdd.yml` and `sdd-direct-push.yml` are added. |
+| `.github/pull_request_template.md` | Remove or rename yours; after installing, merge your sections into the framework's template, keeping the `sdd:metadata` block exactly as shipped. |
+| `README.md` | Add a `## Commands` section for your product commands. |
+| `.gitignore`, `.gitattributes` | Add the missing lines the installer names (`.sdd/results/`, `* text=auto eol=lf`). |
 | `docs/` | Move existing documents into the framework layout where they fit, or link to them; do not keep two versions of the same truth. |
-
-Then run `python3 .agents/tools/sync_adapters.py --check` and the standard framework
-verification.
 
 ### Describe what exists
 
@@ -222,7 +242,7 @@ looks documentation-only.
 ## First-week checklist
 
 - [ ] Standard framework verification passes.
-- [ ] Adoption owner recorded in the methodology header.
+- [ ] Adoption owner recorded in `docs/project-rules.md`.
 - [ ] Brief and MVP drafted; no invented facts.
 - [ ] Architecture overview states the real current system (or its absence).
 - [ ] First stack or feature change has an accepted spec and plan.
