@@ -19,10 +19,13 @@ Edit the active plan and, only when justified, its proposed ADR or design detail
    and only relevant architecture/ADRs. Distinguish existing paths from proposed ones.
    For a greenfield repository, state what does not exist before proposing components.
 3. Read the [plan template](../../../docs/templates/plan.md) and the README command
-   registry. Select the smallest viable approach; compare real alternatives only
+   registry. Keep the sections the template marks required for the level and the
+   conditional ones whose condition holds, add optional ones only when they help, and
+   delete the rest. Select the smallest viable approach; compare real alternatives only
    where a tradeoff matters. Do not replace the project stack without authorization.
-4. Describe affected areas, dependencies, incremental steps, and how each increment
-   can be checked. Keep tasks here; do not generate a separate task hierarchy.
+4. Describe affected areas, dependencies, and incremental steps where the template
+   requires them for the level or they help, and how each increment can be checked.
+   Keep tasks here; do not generate a separate task hierarchy.
 5. Apply [risk checks](../../references/risk-checks.md) only to relevant risks. For
    L3, explicitly address applicable compatibility, data, security, failures,
    observability, rollout, and feasible recovery. Explain meaningful non-applicability.

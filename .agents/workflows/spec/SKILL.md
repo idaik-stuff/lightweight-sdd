@@ -21,8 +21,12 @@ Edit only the active spec unless another documentation change is explicitly in s
 3. Read the [spec template](../../../docs/templates/spec.md) and, when creating or
    transitioning an artifact, [its lifecycle](../../../docs/specs/README.md).
    Update an existing spec in place. Never reset its accepted content from a template.
-4. Write problem, goal, current and expected behavior, scope, and non-goals. Keep
-   technical choices out unless they are genuine contractual constraints.
+   Keep the sections the template marks required for the change's level and the
+   conditional ones whose condition holds, add optional ones only when they help, and
+   delete the rest instead of writing `N/A`.
+4. Write problem, goal, scope, and non-goals; add current and expected behavior where
+   the template requires them for the level or they help. Keep technical choices out
+   unless they are genuine contractual constraints.
 5. Define stable AC identifiers with preconditions, actions, and observable outcomes.
    Cover applicable failure and boundary cases, not a universal checklist. Link to
    existing cross-cutting thresholds rather than duplicating or inventing them.
@@ -35,7 +39,7 @@ Edit only the active spec unless another documentation change is explicitly in s
    scope revision, return the affected spec to draft and record the acceptance needed.
 
 ## Output
-Create or update `docs/specs/<change-id>/spec.md`; retain useful sections only and
+Create or update `docs/specs/<change-id>/spec.md` with the sections its level needs and
 adjust links for its destination. A plan may not exist yet; leave its link pending
 rather than creating a meaningless plan just to satisfy a link checker.
 

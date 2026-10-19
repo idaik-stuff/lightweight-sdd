@@ -11,6 +11,10 @@ Targets 2.0.0.
 
 ### Changed
 
+- The spec and plan templates mark every section as required, optional, or conditional
+  for L2 and for L3. Non-applicable sections are deleted instead of filled with `N/A`;
+  an L2 spec and plan aim at about one page. The spec header adds `Related changes:` and
+  the AC section asks for at least one failure or boundary AC. No new gate rule.
 - **Breaking:** L1 Quick is the default level. It covers fixes, refactors, adjustments,
   and small new capabilities whose behavior fits one to three clear AC. L2 Feature now
   requires a named trigger (T1 ambiguity, T2 new user-visible flow, T3 coordinated changes

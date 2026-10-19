@@ -95,8 +95,8 @@ PR metadata: `Change-Level: L1`, `Change-ID: none`.
   the level.
 - **The L2 spec says what, not how.** The table design is in the plan.
 - **The L2 plan maps every AC to a check** and records the evidence at the end.
-- **The L3 plan addresses every risk area explicitly,** using `N/A - reason` where an
-  area does not apply.
+- **The L3 plan addresses every risk area explicitly,** saying in one line why an area
+  is not affected (this example predates the 2.0.0 templates and writes `N/A - reason`).
 - **The L3 ADR records the one decision with real alternatives** (local accounts
   versus the city's single sign-on). Smaller choices stay in the plan.
 - **The independent review found real problems,** and the plan records how each was
