@@ -149,7 +149,7 @@ Relevant environment: Windows 11, Git for Windows, Python 3.14.7; Linux via WSL 
 | AC-14 | Passed | `test_agent_governance.py` and `test_changes.py`: `scripts/hooks/**` is a framework path with L3 floor; L2 declaration fails. |
 | Full suites | Passed | Windows: 199 automation tests (6 platform skips) and 57 adapter tests. Linux native ext4 copy: 199 (1 skip: index-mode test needs a Git checkout) and 57. |
 | Level floor | Passed | `python3 scripts/check-change-level --base main --level L3 --change CHG-001-branch-and-pr-workflow --scope broad`: floor L3, 4 L3 rules matched, 28 changed paths. |
-| Broad gate | Passed | `python3 scripts/verify broad --target framework --base main --level L3 --change CHG-001-branch-and-pr-workflow`: docs, adapters, adapter-tests, automation-tests passed; report `.sdd/results/verify-20261019T102714983037Z-8d87c45b.json` (local, untracked); source unchanged during the run. |
+| Broad gate | Passed | `python3 scripts/verify broad --target framework --base main --level L3 --change CHG-001-branch-and-pr-workflow`: docs, adapters, adapter-tests, automation-tests passed; report `.sdd/results/verify-20261019T102714983037Z-8d87c45b.json` (local, untracked); source unchanged during the run. Rerun on commit `106aa80` (snapshot `02f626e603ce26c0`): passed, report `verify-20261019T103241904090Z-3d73770b.json`. |
 
 Independent review: automated reviewer (`sdd-independent-review`, Claude sub-agent), fresh context without the implementation conversation, read-only tools (Read, Grep, Glob); it ran no code or tests, and every count, hash, and mode it cites is requester-supplied. The same reviewer context was resumed for rounds 2 and 3. Not a human review or approval.
 
