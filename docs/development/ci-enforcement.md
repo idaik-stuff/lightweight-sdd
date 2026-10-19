@@ -322,6 +322,31 @@ Until enforcement becomes available, apply a written operating policy:
 - If a gate must be bypassed in an emergency, use the authorized exception
   procedure in the methodology; do not treat the change as verified.
 
+This is the situation of a **private repository on GitHub Free**: no branch
+protection, rulesets, required checks, or required reviews, and a PR author cannot
+approve their own PR. The local guards then become the main protection:
+
+- The `pre-push` hook (`git config core.hooksPath scripts/hooks`, once per clone)
+  refuses pushes to the default branch. `git push --no-verify` bypasses it; that is a
+  human decision recorded in the PR, never an agent's.
+- `scripts/check-change-level` and `scripts/verify` fail when the default branch has
+  changes against the base, and when the default branch cannot be determined.
+- The optional `sdd-direct-push` workflow flags, after the fact, commits that reached
+  the default branch without a merged PR. It never blocks a merge; disable it in the
+  Actions UI if it is not wanted. Like `sdd.yml`, it is skipped in the upstream
+  template repository.
+
+The checks skip detached checkouts, which is how `sdd.yml` tests a PR. A custom job
+that checks out the default branch by name (for example on `push`) and runs
+`scripts/verify` or `scripts/check-change-level` with `--base` fails by design;
+check out the commit detached instead. The push event lists at most 2048 commits, so
+`sdd-direct-push` fails rather than passing a larger push, and it also fails on a force
+push or a push it cannot check.
+
+Configure merges so that the PR description lands in Git: allow squash merging only,
+with the default commit message "Pull request title and description", and delete head
+branches automatically. For L0/L1 the PR description is the change record.
+
 The absence of merge blocking is a platform limitation, not a successful
 enforcement result. When enforcement becomes available, complete steps 5 and 6
 and update the recorded state from what you observe. If you also deploy

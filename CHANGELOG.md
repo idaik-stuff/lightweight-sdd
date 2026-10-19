@@ -5,6 +5,32 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the projec
 [semantic versioning](https://semver.org/). See the
 [maintenance guide](docs/manual/maintenance.md#versions) for what each version level means.
 
+## [Unreleased]
+
+Targets 2.0.0.
+
+### Changed
+
+- **Breaking:** `scripts/check-change-level` and `scripts/verify` fail when the default
+  branch has changes against the base, and when the default branch cannot be determined
+  (repository-local `git config sdd.defaultBranch`, else `origin/HEAD`) or the declaration
+  names no branch or disagrees with `origin/HEAD`. Move work on the default branch to
+  a change branch before upgrading. Detached checkouts, such as `sdd.yml`, are unaffected;
+  a custom job that checks out the default branch by name and runs these commands with
+  `--base` must check out a detached commit instead.
+- `AGENTS.md`, the `implement` and `verify` workflows, the handoff contract, and the PR
+  template require one branch and one pull request per change at every level; the agent
+  never merges. The L0/L1 change record is the PR description, kept in Git by squash merge.
+- The README Quick start documents the bootstrap order and makes opening the first change
+  as a pull request an explicit step.
+
+### Added
+
+- Opt-in `scripts/hooks/pre-push` hook that refuses pushes to the default branch, classified
+  as an L3 framework path.
+- Optional `sdd-direct-push` workflow that flags commits reaching the default branch without
+  a merged pull request.
+
 ## [1.0.0] - 2026-10-01
 
 First public release as a GitHub template repository.

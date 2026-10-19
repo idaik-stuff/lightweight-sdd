@@ -54,8 +54,8 @@ For L2 and L3, a change gets a folder `docs/specs/<change-id>/` with exactly two
   mapping from every AC to the check that proves it. The technical owner accepts it,
   and it later holds the evidence summary.
 
-L0 and L1 need neither. Their level, rationale, and evidence fit in the commit message
-or PR. An ADR is added only for a durable decision with real alternatives, never by
+L0 and L1 need neither. Their level, rationale, and evidence fit in the PR description,
+which squash merge turns into the commit message. An ADR is added only for a durable decision with real alternatives, never by
 default. See the [specs index](../specs/README.md) and the
 [templates](../templates/spec.md).
 

@@ -41,8 +41,8 @@ always needs at least a spec and plan, and the team still classifies risky migra
 
 | Level | Change | Artifacts |
 | --- | --- | --- |
-| L0 | Fix the "retrun" typo in the help page. | Commit message only ([below](#l0-commit)). |
-| L1 | Due dates shown one day early for loans near midnight. | Commit message only ([below](#l1-commit)). |
+| L0 | Fix the "retrun" typo in the help page. | PR description only ([below](#l0-commit)). |
+| L1 | Due dates shown one day early for loans near midnight. | PR description only ([below](#l1-commit)). |
 | L2 | Members can reserve a book that is on loan. | [spec](CHG-001-book-reservations/spec.md) and [plan](CHG-001-book-reservations/plan.md). |
 | L3 | Staff sign-in; only administrators may delete members. | [spec](CHG-002-sign-in-and-permissions/spec.md), [plan](CHG-002-sign-in-and-permissions/plan.md), and [ADR 0001](adr/0001-local-staff-accounts.md). |
 
@@ -51,7 +51,7 @@ In a real repository, change folders live in `docs/specs/<change-id>/` and ADRs 
 
 <a id="l0-commit"></a>
 
-## L0: commit message
+## L0: PR description
 
 ```text
 Fix typo in help page
@@ -65,7 +65,7 @@ PR metadata: `Change-Level: L0`, `Change-ID: none`.
 
 <a id="l1-commit"></a>
 
-## L1: commit message
+## L1: PR description
 
 The investigation found that `loans.due_date()` computed the date in UTC while the
 desk displays local time, so loans created between 00:00 and 01:00 local time showed
@@ -89,7 +89,8 @@ PR metadata: `Change-Level: L1`, `Change-ID: none`.
 
 ## What to notice
 
-- **L0 and L1 leave no files behind.** The commit message is the change record.
+- **L0 and L1 leave no files behind.** The PR description is the change record; squash
+  merge keeps it in Git as the commit message.
 - **The L1 investigation checked for hidden L3 risk** (stored dates) before settling
   the level.
 - **The L2 spec says what, not how.** The table design is in the plan.

@@ -63,8 +63,8 @@ document, a targeted `python3 scripts/check-docs <path>` plus inspecting the dif
 **What to watch.** A text change is not automatically L0. If the "typo" were in a
 recovery runbook step or an error code that clients parse, it would change behavior.
 
-**What you record.** The level and evidence go in the commit message or PR. No spec,
-no plan:
+**What you record.** The level and evidence go in the PR description, which squash merge
+keeps in Git as the commit message. No spec, no plan:
 
 ```text
 Fix typo in help page
@@ -114,7 +114,7 @@ python3 scripts/verify standard --base main --level L1
 
 Replace `main` with the base you actually intend: the runner never assumes one.
 
-**What you record.** As for L0, the commit message or PR holds the level, rationale,
+**What you record.** As for L0, the PR description holds the level, rationale,
 change, checks, and limitations, including the regression test's before/after result.
 
 ## L2: reserving a book that is on loan

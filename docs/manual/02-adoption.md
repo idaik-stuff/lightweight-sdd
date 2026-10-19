@@ -43,6 +43,10 @@ This runs the document checks, the adapter drift check, and both maintenance tes
 suites. A pass says only that the framework files are consistent; it says nothing
 about your product. See [automation](../development/automation.md#run-now).
 
+From here on, every change goes on its own branch and through a pull request,
+including the clean-up described in step 1; see the README Quick start for the bootstrap order and
+the opt-in `pre-push` hook.
+
 ### 3. Name the owners
 
 The framework assumes real people behind three roles. The same person may hold all of

@@ -1,11 +1,15 @@
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import unittest
+from unittest import mock
 
 from support import Fixture, ROOT
-from sdd.changes import assess, changed_paths, load_rules, matches
-from sdd.common import ConfigError
+from sdd.changes import assess, changed_paths, load_rules, main, matches
+from sdd.common import ConfigError, run_git
 
 
 class ChangeTests(Fixture):
@@ -131,6 +135,124 @@ class ChangeTests(Fixture):
         self.rules(data)
         with self.assertRaises(ConfigError):
             load_rules(self.root)
+
+    def test_changes_on_default_branch_fail(self):
+        base = self.init_git()
+        self.git("checkout", "-q", self.default_branch)
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual((report["branch"], report["default_branch"]), (self.default_branch,) * 2)
+        self.assertIn(f"default branch '{self.default_branch}'", " ".join(report["errors"]))
+
+    def test_cli_fails_on_default_branch(self):
+        base = self.init_git()
+        self.git("checkout", "-q", self.default_branch)
+        self.write("README.md", "change")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = main(["--root", str(self.root), "--base", base, "--level", "L1"])
+        self.assertEqual(code, 1)
+        self.assertIn("create a change branch", out.getvalue())
+
+    def test_change_branch_is_unaffected(self):
+        base = self.init_git()
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual((report["branch"], report["default_branch"]), ("chg-fixture", self.default_branch))
+
+    def test_no_changes_on_default_branch_not_failed_by_rule(self):
+        base = self.init_git()
+        self.git("checkout", "-q", self.default_branch)
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["errors"], [])
+
+    def test_detached_checkout_is_unaffected(self):
+        base = self.init_git()
+        self.git("checkout", "-q", "--detach", base)
+        self.git("config", "--unset", "sdd.defaultBranch")
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "passed")
+        self.assertIsNone(report["branch"])
+
+    def test_undeterminable_default_branch_fails_closed(self):
+        base = self.init_git()
+        self.git("config", "--unset", "sdd.defaultBranch")
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "failed")
+        errors = " ".join(report["errors"])
+        self.assertIn("git remote set-head origin --auto", errors)
+        self.assertIn("sdd.defaultBranch", errors)
+
+    def test_origin_head_declares_default_branch(self):
+        base = self.init_git()
+        self.git("config", "--unset", "sdd.defaultBranch")
+        self.git("update-ref", "refs/remotes/origin/trunk", base)
+        self.git("symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk")
+        self.git("checkout", "-qb", "trunk")
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["default_branch"], "trunk")
+        self.assertEqual(report["status"], "failed")
+
+    def test_declaration_disagreeing_with_origin_head_fails(self):
+        base = self.init_git()
+        self.git("update-ref", "refs/remotes/origin/trunk", base)
+        self.git("symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk")
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("disagrees with origin/HEAD 'trunk'", " ".join(report["errors"]))
+
+    def test_declaration_matching_origin_head_is_accepted(self):
+        base = self.init_git()
+        self.git("update-ref", f"refs/remotes/origin/{self.default_branch}", base)
+        self.git("symbolic-ref", "refs/remotes/origin/HEAD", f"refs/remotes/origin/{self.default_branch}")
+        self.write("README.md", "change")
+        self.assertEqual(assess(self.root, base, "L1")["status"], "passed")
+
+    def test_declared_branch_that_does_not_exist_fails(self):
+        base = self.init_git()
+        self.git("config", "sdd.defaultBranch", "mian")
+        self.write("README.md", "change")
+        report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("'mian' names no local or origin branch", " ".join(report["errors"]))
+
+    def test_global_declaration_is_ignored(self):
+        base = self.init_git()
+        self.git("config", "--unset", "sdd.defaultBranch")
+        config = self.write("global.gitconfig", f"[sdd]\n\tdefaultBranch = {self.default_branch}\n")
+        self.write("README.md", "change")
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": str(config)}):
+            report = assess(self.root, base, "L1")
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("Cannot determine the default branch", " ".join(report["errors"]))
+
+    def test_git_failure_is_not_read_as_detached(self):
+        base = self.init_git()
+        self.write("README.md", "change")
+        real = run_git
+
+        def broken(root, *args):
+            if args[:1] == ("symbolic-ref",):
+                return subprocess.CompletedProcess(args, 128, b"", b"fatal: simulated")
+            return real(root, *args)
+
+        with mock.patch("sdd.common.run_git", broken):
+            with self.assertRaisesRegex(ConfigError, "simulated"):
+                assess(self.root, base, "L1")
+
+    def test_hook_only_change_requires_l3(self):
+        self.rules(json.loads((ROOT / ".sdd/risk-rules.json").read_text()))
+        base = self.init_git()
+        self.write("scripts/hooks/pre-push", "#!/bin/sh\n")
+        report = assess(self.root, base, "L2")
+        self.assertEqual(report["detected_floor"], "L3")
+        self.assertIn("below detected minimum L3", " ".join(report["errors"]))
 
     def test_conflicted_worktree_blocked(self):
         base = self.init_git()
