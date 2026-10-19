@@ -36,6 +36,8 @@ in CI standard for L0 to L2). A higher scope is always allowed; a lower one neve
   tests). Use it to confirm the framework is healthy.
 - `product` (the default): framework checks plus your registered product checks. This
   is the only target that produces product evidence.
+- `auto` (needs `--base`): the target CI would pick for the change: `framework` when
+  every changed path is a framework path, otherwise `product`. Use it to predict CI.
 
 A product run with no product checks registered is `blocked`, not passed:
 

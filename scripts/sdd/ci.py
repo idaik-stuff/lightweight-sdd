@@ -10,6 +10,7 @@ import re
 from .changes import LEVELS, SCOPES, load_rules, matches
 from .common import ConfigError, commit, git, git_root, inside, load_json, nul_paths, relative_path, require_keys
 from .docs import change_id, check_docs, field, read_markdown, validate_change
+from .policy import ci_configuration, ci_policy, route  # ci_configuration re-exported for callers
 from .verify import configuration, select
 
 START, END = '<!-- sdd:metadata -->', '<!-- /sdd:metadata -->'
@@ -35,26 +36,6 @@ def metadata(body: str | None) -> dict[str, str]:
     if values['Change-ID'] != 'none':
         change_id(values['Change-ID'])
     return {'level': values['Change-Level'], 'change': values['Change-ID']}
-
-
-def ci_configuration(root: Path) -> dict:
-    data = load_json(inside(root, '.sdd/ci.json'))
-    require_keys(data, {'version', 'framework_paths', 'design_paths', 'scopes'})
-    if type(data['version']) is not int or data['version'] != 1:
-        raise ConfigError('Unsupported CI policy version')
-    for group in ('framework_paths', 'design_paths'):
-        values = data[group]
-        if not isinstance(values, list) or not values:
-            raise ConfigError(f'{group} must be a nonempty list')
-        for value in values:
-            if not isinstance(value, str) or not value or value.startswith('/') or '\\' in value or '..' in value.split('/') or '\x00' in value:
-                raise ConfigError('Invalid CI path pattern')
-    require_keys(data['scopes'], set(LEVELS))
-    for level, mode in data['scopes'].items():
-        minimum = 'broad' if level == 'L3' else 'standard' if level == 'L2' else 'focused'
-        if not isinstance(mode, str) or mode not in SCOPES or SCOPES[mode] < SCOPES[minimum]:
-            raise ConfigError(f'{level} cannot use a scope below {minimum}')
-    return data
 
 
 def clean_checkout(root: Path, expected: str) -> None:
@@ -96,7 +77,7 @@ def assess_ci(trusted: Path, candidate: Path, event: dict, expected_sha: str) ->
     parents = git(candidate, 'rev-list', '--parents', '-n', '1', expected_sha).decode().split()
     if parents != [expected_sha, base, head]:
         raise ConfigError('Expected the PR test merge with exactly the event base and head as parents')
-    policy = ci_configuration(trusted)
+    policy = ci_policy(trusted)
     rules = load_rules(trusted)
     declared = metadata(body)
     paths = sorted(set(nul_paths(git(candidate, 'diff', '--name-only', '-z', '--no-renames',
@@ -114,8 +95,7 @@ def assess_ci(trusted: Path, candidate: Path, event: dict, expected_sha: str) ->
             hits.append({'id': rule['id'], 'paths': changed, 'minimum_level': rule['minimum_level']})
     required = max(floor, LEVELS[declared['level']])
     mode = policy['scopes'][f'L{required}']
-    target = 'framework' if all(any(matches(p, g) for g in policy['framework_paths']) for p in paths) else 'product'
-    design = all(p.endswith('.md') and any(matches(p, g) for g in policy['design_paths']) for p in paths)
+    target, design = route(policy, paths)
     errors: list[str] = []
     if LEVELS[declared['level']] < floor:
         errors.append(f'Declared {declared["level"]} is below the base-policy floor L{floor}')
@@ -137,7 +117,7 @@ def assess_ci(trusted: Path, candidate: Path, event: dict, expected_sha: str) ->
                 errors.append('Implementation needs an approved, in-progress, or completed plan')
     # Candidate registration is parsed for validity, never used to select this run's commands.
     configuration(candidate)
-    ci_configuration(candidate)
+    ci_policy(candidate)
     checks = select(configuration(trusted, execution_root=candidate), target, mode)
     if not checks or (target == 'product' and not any(c['kind'] == 'product' for c in checks)):
         errors.append('Required checks are absent in the base policy; register real product checks in a separate reviewed change')

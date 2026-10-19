@@ -27,6 +27,12 @@ class AgentGovernanceTests(Fixture):
                 self.assertTrue(any(rule['minimum_level']=='L3' and any(matches(path,g) for g in rule['paths'])
                                     for rule in rules))
 
+    def test_product_ci_file_is_an_l3_framework_path(self):
+        path = '.sdd/product-ci.json'
+        self.assertTrue(any(matches(path, pattern) for pattern in ci_configuration(ROOT)['framework_paths']))
+        self.assertTrue(any(rule['minimum_level'] == 'L3' and any(matches(path, g) for g in rule['paths'])
+                            for rule in load_rules(ROOT)))
+
     def test_product_rules_file_is_an_l3_framework_path(self):
         path = '.sdd/product-risk-rules.json'
         self.assertTrue(any(matches(path, pattern) for pattern in ci_configuration(ROOT)['framework_paths']))

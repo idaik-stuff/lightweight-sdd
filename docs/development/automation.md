@@ -248,6 +248,18 @@ for untrusted changes. A timeout cannot undo side effects already performed.
 Keep this order: choose the real stack and supported environments; establish actual
 lint/type/test/build commands; add those commands as `kind: product`; assign them to
 the relevant cumulative profiles; run and inspect the result against an explicit base.
+
+Product checks must run on a clean CI runner. The workflow sets up only Python and
+uses the runtimes of the `ubuntu-24.04` runner image (which includes Node.js, Java,
+and Go); check the image's documented versions against your stack. Nothing is
+installed for you, so register a check that installs pinned dependencies, for example
+`npm ci` from a committed lockfile, and put it first in the product `focused` profile:
+checks run in profile order (focused, then standard, then broad) and in list order
+within each profile, not in registration order. CI reads the registry from the base,
+so the PR that registers or changes product checks runs the previous registry; its new
+checks first run on the next PR. That PR is L3 (it changes verification controls), so
+it also has its spec and plan; keep it free of product code, and run the new checks
+locally on it with `--target product`.
 Use regression and contract/migration/security checks when the actual risk warrants
 them. Do not add invented commands just to make the product profile nonempty.
 

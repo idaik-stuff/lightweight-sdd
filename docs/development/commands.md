@@ -13,6 +13,7 @@ uses only the standard library; Git is required for change checks and product ve
 | Focused framework verification | `python3 scripts/verify focused --target framework` | Documentation, plus generated adapters where the generator is installed. |
 | Standard framework verification | `python3 scripts/verify standard --target framework` | Focused checks plus the automation tests. |
 | Broad framework verification | `python3 scripts/verify broad --target framework` | Inherits standard; no extra broad framework-only checks are configured. |
+| Verification with the CI target | `python3 scripts/verify MODE --target auto --base BASE --level LEVEL` | Picks `framework` or `product` with the same rule and policy files as CI (including `.sdd/product-ci.json`); records the choice. |
 | Change-level check | `python3 scripts/check-change-level --base BASE --level LEVEL` | Replace placeholders; add `--change ID` for L2/L3. |
 | Product verification | `python3 scripts/verify MODE --base BASE --level LEVEL` | Add `--change ID` for L2/L3. Runs registered framework + product checks; blocked until product checks exist. |
 | Check local CI ownership setup | `python3 scripts/check-ci-setup` | Exits 3 until real CODEOWNERS are configured; does not audit GitHub. |

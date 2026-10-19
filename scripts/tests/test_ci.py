@@ -1,4 +1,6 @@
+import contextlib
 import copy
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -7,6 +9,7 @@ import unittest
 
 from support import Fixture, ROOT, command, manifest
 from sdd.common import ConfigError
+from sdd.policy import ci_policy
 from sdd.ci import START, END, assess_ci, ci_configuration, clean_checkout, event_context, final_gate, metadata
 from sdd.ci_setup import PROTECTED, check_setup, owners, protected
 from sdd.verify import run
@@ -97,6 +100,77 @@ class PolicyTests(Fixture):
         r = self.assess('L1')
         self.assertEqual((r['detected_floor'], r['status']), ('L3', 'failed'))
         self.assertIn('billing', [m['id'] for m in r['matches']])
+
+    def product_ci(self, data):
+        self.write('.sdd/product-ci.json', json.dumps(data))
+
+    def test_product_framework_path_routes_as_framework(self):
+        self.product_ci({'version': 1, 'framework_paths': ['tools/release/**']})
+        self.start(); self.write('tools/release/notes.sh', 'echo\n')
+        r = self.assess('L1')
+        self.assertEqual(r['target'], 'framework')
+
+    def test_without_product_ci_the_same_path_is_product(self):
+        self.start(); self.write('tools/release/notes.sh', 'echo\n')
+        self.assertEqual(self.assess('L1')['target'], 'product')
+
+    def test_product_ci_raises_a_scope(self):
+        self.product_ci({'version': 1, 'scopes': {'L1': 'broad'}})
+        self.start(); self.write('README.md', '# Changed\n')
+        self.assertEqual(self.assess('L1')['scope'], 'broad')
+
+    def test_product_ci_cannot_lower_scope_or_add_unknown_keys(self):
+        for data, message in (({'version': 1, 'scopes': {'L3': 'standard'}}, 'cannot lower'),
+                              ({'version': 1, 'design_paths': ['x/**']}, 'unknown'),
+                              ({'scopes': {}}, 'missing'),
+                              ({'version': 1, 'framework_paths': ['../escape/**']}, 'invalid CI path'),
+                              ({'version': 2}, 'unsupported version'),
+                              ({'version': 1, 'scopes': {'L9': 'broad'}}, 'levels L0-L3'),
+                              ([1, 2], 'JSON object')):
+            with self.subTest(data=data):
+                self.product_ci(data)
+                with self.assertRaisesRegex(ConfigError, message) as raised:
+                    ci_policy(self.root)
+                self.assertIn('product-ci.json', str(raised.exception))
+
+    def test_product_ci_rejects_catch_all_framework_paths(self):
+        for pattern in ('**', '*', '**/*', '*/**', '*.py', '**/*.ts'):
+            with self.subTest(pattern=pattern):
+                self.product_ci({'version': 1, 'framework_paths': [pattern]})
+                with self.assertRaisesRegex(ConfigError, 'arbitrary'):
+                    ci_policy(self.root)
+        self.product_ci({'version': 1, 'framework_paths': ['tools/release/**']})
+        self.assertIn('tools/release/**', ci_policy(self.root)['framework_paths'])
+
+    def test_auto_matches_assess_ci_on_the_test_merge(self):
+        for path, expected in (('README.md', 'framework'), ('src/app.py', 'product')):
+            with self.subTest(path=path):
+                self.temp.cleanup(); self.setUp()
+                self.start(); self.write(path, 'x\n')
+                r = self.assess('L1')
+                with contextlib.redirect_stdout(io.StringIO()):
+                    local = run(self.root, 'focused', 'auto', base=self.base, level='L1', dry_run=True)
+                self.assertEqual((r['target'], local['target']), (expected, expected))
+
+    def test_candidate_cannot_relax_or_remove_base_product_ci(self):
+        self.product_ci({'version': 1, 'scopes': {'L1': 'broad'}})
+        self.start()
+        (self.root / '.sdd/product-ci.json').unlink()
+        self.write('README.md', '# Changed\n')
+        self.assertEqual(self.assess('L1')['scope'], 'broad')
+
+    def test_invalid_candidate_product_ci_fails_the_assessment(self):
+        self.start()
+        self.product_ci({'version': 1, 'scopes': {'L3': 'standard'}})
+        with self.assertRaisesRegex(ConfigError, 'cannot lower'):
+            self.assess('L3')
+
+    def test_candidate_product_ci_does_not_apply_to_its_own_pr(self):
+        self.start()
+        self.product_ci({'version': 1, 'framework_paths': ['tools/release/**'], 'scopes': {'L1': 'broad'}})
+        self.write('tools/release/notes.sh', 'echo\n')
+        r = self.assess('L1')
+        self.assertEqual((r['target'], r['scope']), ('product', 'standard'))
 
     def test_doc_typo_runs_standard_in_ci(self):
         # Shipped policy: CI never runs below standard for L0-L2, even when local L0 is focused.

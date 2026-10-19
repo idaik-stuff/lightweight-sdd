@@ -16,8 +16,9 @@ import time
 import uuid
 from typing import Any
 
-from .changes import LEVELS, assess, load_rules
+from .changes import LEVELS, assess, changed_paths, load_rules
 from .common import ConfigError, inside, load_json, require_keys, snapshot
+from .policy import ci_policy, ci_policy_at, route
 
 MODES = ("focused", "standard", "broad")
 EXIT = {"passed": 0, "failed": 1, "error": 2, "blocked": 3, "not_run": 3, "interrupted": 130}
@@ -165,7 +166,8 @@ def run(root: Path, mode: str, target: str, base: str | None = None,
         policy_root: Path | None = None) -> dict:
     report: dict[str, Any] = {
         "schema_version": 1, "started_at": datetime.now(timezone.utc).isoformat(),
-        "target": target, "mode": mode, "status": "blocked", "checks": [], "reasons": [],
+        "target": target, "target_selection": "auto" if target == "auto" else "explicit",
+        "mode": mode, "status": "blocked", "checks": [], "reasons": [],
         "environment": {"python": platform.python_version(), "platform": platform.system()},
         "change_gate": None, "source_before": None, "source_after": None,
         "readiness": "not-assessed", "independent_review": "not-assessed", "deployment": "not-assessed",
@@ -174,6 +176,19 @@ def run(root: Path, mode: str, target: str, base: str | None = None,
                         "Evidence excludes ignored files and external dependencies; source hashing is not an atomic snapshot",
                         "Commands inherit the local environment and are not sandboxed; no raw output or environment values are stored"]}
     try:
+        if target == "auto":
+            # Same routing rule as CI, with CI's inputs: the policy files committed at the base
+            # (or the trusted policy root), never the working tree's own edits to them.
+            if not base:
+                raise ConfigError("--target auto requires --base to compare the changed paths")
+            policy = ci_policy(policy_root) if policy_root else ci_policy_at(root, base)
+            ci_policy(root)  # Validate the working tree's files too, like CI validates the candidate's.
+            target, _ = route(policy, changed_paths(root, base)[0])
+            report["target"] = target
+            if level in LEVELS:
+                report["ci_scope"] = policy["scopes"][level]
+                if MODES.index(mode) < MODES.index(report["ci_scope"]):
+                    report["warnings"] = [f"CI runs {report['ci_scope']} for declared {level} (or more for a higher floor); this run is {mode}"]
         data = configuration(policy_root or root, execution_root=root)
         report["policy_source"] = snapshot(policy_root or root)
         selected = select(data, target, mode)
@@ -232,8 +247,9 @@ def run(root: Path, mode: str, target: str, base: str | None = None,
 def main(argv: list[str] | None = None, default_root: Path | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=MODES)
-    parser.add_argument("--target", choices=("framework", "product"), default="product",
-                        help="Default: product. Framework-only success does not verify the product")
+    parser.add_argument("--target", choices=("framework", "product", "auto"), default="product",
+                        help="Default: product. Framework-only success does not verify the product. "
+                             "auto (needs --base) picks the target CI would pick")
     parser.add_argument("--root", type=Path, default=default_root or Path.cwd())
     parser.add_argument("--policy-root", type=Path, help="Read risk rules and check registration from a separate trusted checkout")
     parser.add_argument("--base", help="Explicit commit/revision compared with the current working snapshot")
@@ -253,9 +269,12 @@ def main(argv: list[str] | None = None, default_root: Path | None = None) -> int
         if report["status"] == "passed":
             report["status"] = "error"
         path = None
-    print(f"\nVerification: {report['status']} | target={args.target} | scope={args.mode}")
+    selection = " (auto)" if report["target_selection"] == "auto" and report["target"] != "auto" else ""
+    print(f"\nVerification: {report['status']} | target={report['target']}{selection} | scope={args.mode}")
     for reason in report["reasons"]:
         print(f"  {reason}")
+    for warning in report.get("warnings", []):
+        print(f"  WARNING: {warning}")
     for check in report["checks"]:
         if check.get("reason"):
             print(f"  {check['id']}: {check['status']} - {check['reason']}")

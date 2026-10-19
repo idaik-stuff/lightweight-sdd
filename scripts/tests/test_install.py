@@ -400,6 +400,28 @@ class InstallTests(Fixture):
         self.commit("1.0.0 single rules file")
         self.assertIn("rule public-contract", self.assert_refused()["reason"])
 
+    def test_product_ci_settings_are_created_once_and_kept(self):
+        self.assertEqual(self.install()[0], 0)
+        self.assertEqual(json.loads((self.root / ".sdd/product-ci.json").read_text()), {"version": 1})
+        self.commit()
+        own = json.dumps({"version": 1, "framework_paths": ["tools/release/**"], "scopes": {"L2": "broad"}})
+        self.write(".sdd/product-ci.json", own)
+        self.commit("product CI settings")
+        self.assertEqual(self.install(None)[0], 0)
+        self.assertEqual((self.root / ".sdd/product-ci.json").read_text(), own)
+
+    def test_upgrade_refuses_product_ci_below_shipped_scope(self):
+        self.assertEqual(self.install()[0], 0)
+        self.write(".sdd/product-ci.json", json.dumps({"version": 1, "scopes": {"L1": "focused"}}))
+        self.commit("product CI pinned to an older, lower scope")
+        self.assertIn("cannot lower", self.assert_refused(None)["reason"])
+
+    def test_upgrade_preflight_rejects_duplicate_json_keys(self):
+        self.assertEqual(self.install()[0], 0)
+        self.write(".sdd/product-ci.json", '{"version": 1, "version": 1}')
+        self.commit("duplicate key")
+        self.assertIn("Duplicate JSON key", self.assert_refused(None)["reason"])
+
     def test_upgrade_reports_dropped_client_files_as_orphans(self):
         self.assertEqual(self.install("claude,cursor")[0], 0)
         self.commit()

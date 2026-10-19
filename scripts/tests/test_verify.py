@@ -10,6 +10,8 @@ from unittest import mock
 
 from support import Fixture, ROOT, command, manifest
 from sdd.common import ConfigError
+from sdd.changes import changed_paths
+from sdd.policy import ci_policy, route
 from sdd.verify import EXIT, aggregate, configuration, execute, run, save_report, select
 
 
@@ -143,6 +145,65 @@ class VerificationTests(Fixture):
         self.git("config", "--unset", "sdd.defaultBranch")
         self.write("change.txt", "change")
         self.assertEqual(self.quiet_run(target="framework")["status"], "passed")
+
+    def auto_run(self, change_path, **kwargs):
+        self.write(".sdd/ci.json", (ROOT / ".sdd/ci.json").read_text())
+        base = self.init_git()
+        self.write(change_path, "change")
+        return base, self.quiet_run(target="auto", base=base, level="L1", **kwargs)
+
+    def test_auto_selects_framework_like_ci(self):
+        base, report = self.auto_run("README.md")
+        self.assertEqual((report["target"], report["target_selection"], report["status"]), ("framework", "auto", "passed"))
+        self.assertEqual(route(ci_policy(self.root), changed_paths(self.root, base)[0])[0], "framework")
+
+    def test_auto_selects_product_and_blocks_without_product_checks(self):
+        _, report = self.auto_run("src/app.py")
+        self.assertEqual((report["target"], report["status"]), ("product", "blocked"))
+        self.assertIn("No product checks configured", " ".join(report["reasons"]))
+
+    def test_auto_requires_base(self):
+        self.init_git()
+        report = self.quiet_run(target="auto")
+        self.assertEqual(report["status"], "error")
+        self.assertIn("requires --base", " ".join(report["reasons"]))
+        self.assertEqual(report["checks"], [])
+
+    def test_auto_uses_product_framework_paths(self):
+        self.write(".sdd/product-ci.json", json.dumps({"version": 1, "framework_paths": ["tools/release/**"]}))
+        _, report = self.auto_run("tools/release/notes.sh")
+        self.assertEqual(report["target"], "framework")
+
+    def test_auto_ignores_working_tree_policy_edits(self):
+        self.write(".sdd/ci.json", (ROOT / ".sdd/ci.json").read_text())
+        base = self.init_git()
+        self.write(".sdd/product-ci.json", json.dumps({"version": 1, "framework_paths": ["src/**"]}))
+        self.write("src/app.py", "change")
+        report = self.quiet_run(target="auto", base=base, level="L3")
+        self.assertEqual(report["target"], "product")
+
+    def test_auto_validates_working_tree_product_ci(self):
+        self.write(".sdd/ci.json", (ROOT / ".sdd/ci.json").read_text())
+        base = self.init_git()
+        self.write(".sdd/product-ci.json", json.dumps({"version": 1, "scopes": {"L3": "standard"}}))
+        report = self.quiet_run(target="auto", base=base, level="L1")
+        self.assertEqual(report["status"], "error")
+        self.assertIn("cannot lower", " ".join(report["reasons"]))
+
+    def test_auto_dry_run_and_ci_scope_warning(self):
+        self.write(".sdd/product-ci.json", json.dumps({"version": 1, "scopes": {"L1": "broad"}}))
+        base, report = self.auto_run("README.md", dry_run=True)
+        self.assertEqual((report["target"], report["status"], report["ci_scope"]), ("framework", "not_run", "broad"))
+        self.assertIn("CI runs broad", " ".join(report["warnings"]))
+
+    def test_dangling_product_ci_link_fails_closed(self):
+        self.write(".sdd/ci.json", (ROOT / ".sdd/ci.json").read_text())
+        try:
+            os.symlink("missing.json", self.root / ".sdd/product-ci.json")
+        except (OSError, NotImplementedError):
+            self.skipTest("Symlinks are not available")
+        with self.assertRaises(ConfigError):
+            ci_policy(self.root)
 
     def test_passed_process(self):
         report = self.quiet_run()
