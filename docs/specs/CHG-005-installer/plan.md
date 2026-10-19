@@ -1,6 +1,6 @@
 # Plan: CHG-005-installer | Installer with client selection
 
-Status: `in-progress` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including the three refinements (installer files not shipped, upgrade never deletes, CODEOWNERS rows from installed clients).
+Status: `completed` | Technical owner: Idaika Iglesias | Accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation), including the three refinements (installer files not shipped, upgrade never deletes, CODEOWNERS rows from installed clients).
 Spec: [spec.md](spec.md) | Verification scope: `broad`.
 
 ## System inspection
@@ -159,4 +159,4 @@ Review limitations: an isolated session of the same model is not human independe
 
 Outstanding items / exceptions: `sdd-gate` is skipped in this repository by design; the installer is exercised only against local fixture repositories, not a real adopter.
 
-Delivery: not merged; not released.
+Delivery: merged by the owner (Idaika Iglesias) through [PR #8](https://github.com/idaik-stuff/lightweight-sdd/pull/8) as squash commit `658216c` on 2026-10-19; `sdd-gate` skipped in this repository by design. The owner turned off the GitHub "Template repository" setting the same day. Not released: the 2.0.0 version is pending CHG-006 and CHG-007.

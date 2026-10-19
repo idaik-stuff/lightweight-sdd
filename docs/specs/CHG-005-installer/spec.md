@@ -1,6 +1,6 @@
 # Spec: CHG-005-installer | Installer with client selection
 
-Status: `approved` | Level: `L3` | Level rationale: changes how the framework reaches every product (the adoption contract), which files each product owns, the command registry `AGENTS.md` points to, and the CI ownership check; a wrong install or upgrade could overwrite product work or ship a product without its gates.
+Status: `implemented` | Level: `L3` | Level rationale: changes how the framework reaches every product (the adoption contract), which files each product owns, the command registry `AGENTS.md` points to, and the CI ownership check; a wrong install or upgrade could overwrite product work or ship a product without its gates.
 Owner: Idaika Iglesias | Scope accepted by / date: Idaika Iglesias, 2026-10-19 (in conversation).
 Related changes: fifth of the SDD Lite 2.0 rollout; builds on [CHG-001](../CHG-001-branch-and-pr-workflow/spec.md) (branch and PR rule, bootstrap order), [CHG-003](../CHG-003-levels/spec.md), and [CHG-004](../CHG-004-templates/spec.md). CHG-006 (risk-rule split and path mapping) and CHG-007 (CI runtimes and `--target auto`) follow.
 
