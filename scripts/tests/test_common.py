@@ -29,7 +29,10 @@ class CommonTests(Fixture):
                 inside(self.root, name)
 
     def test_symlink_escape_rejected(self):
-        (self.root / "outside").symlink_to(self.root.parent, target_is_directory=True)
+        try:
+            (self.root / "outside").symlink_to(self.root.parent, target_is_directory=True)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"Symlinks unavailable: {exc}")
         with self.assertRaises(ConfigError):
             inside(self.root, "outside/x")
 

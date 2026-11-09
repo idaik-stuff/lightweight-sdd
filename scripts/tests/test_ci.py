@@ -240,7 +240,11 @@ class PolicyTests(Fixture):
         r=self.assess(); self.assertEqual(r['detected_floor'],'L3'); self.assertIn('new.txt',r['paths']); self.assertIn('api/old.txt',r['paths'])
 
     def test_symlink_rejected_before_reading(self):
-        self.start(); (self.root/'README.md').unlink(); (self.root/'README.md').symlink_to('/etc/passwd')
+        self.start(); (self.root/'README.md').unlink()
+        try:
+            (self.root/'README.md').symlink_to('/etc/passwd')
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f'Symlinks unavailable: {exc}')
         event,merge=self.finish('L0')
         with self.assertRaisesRegex(ConfigError,'symlinks'): assess_ci(self.trusted,self.root,event,merge)
 

@@ -202,14 +202,20 @@ class MultiAgentTests(unittest.TestCase):
     def test_symlink_source_is_rejected(self):
         p = self.root/'.agents/workflows/spec/SKILL.md'
         p.unlink()
-        p.symlink_to(self.root/'AGENTS.md')
+        try:
+            p.symlink_to(self.root/'AGENTS.md')
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f'Symlinks unavailable: {exc}')
         with self.assertRaisesRegex(AdapterError, 'symlinked'):
             synchronize(self.root)
 
     def test_symlink_discovery_root_is_rejected(self):
         outside = self.root/'outside'; outside.mkdir()
         (self.root/'.cursor').mkdir()
-        (self.root/'.cursor/skills').symlink_to(outside, target_is_directory=True)
+        try:
+            (self.root/'.cursor/skills').symlink_to(outside, target_is_directory=True)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f'Symlinks unavailable: {exc}')
         with self.assertRaisesRegex(AdapterError, 'symlinked'):
             synchronize(self.root)
 
